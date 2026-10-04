@@ -1,0 +1,7 @@
+description = "Mail and calendar provider for Microsoft accounts (Outlook.com, Hotmail, Microsoft 365) through Microsoft Graph."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/microsoft"
+commit = "3c677cb0e0503a1d1e7b60f8803ee017d512902f"

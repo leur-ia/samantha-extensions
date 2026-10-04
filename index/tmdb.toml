@@ -1,0 +1,7 @@
+description = "Movies provider: search, details, trends, TMDB rating and where to watch (The Movie Database API, your own token; JustWatch data)."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/tmdb"
+commit = "3c677cb0e0503a1d1e7b60f8803ee017d512902f"
