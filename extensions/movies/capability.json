@@ -1,0 +1,149 @@
+{
+  "methods": [
+    {
+      "name": "search",
+      "description": "Find films or series by title across providers: {results: [{id, title, year, kind, overview?}], errors?}.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "year": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "movie",
+              "series"
+            ]
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "merge": {
+        "list": "results"
+      },
+      "route": [],
+      "ids": [
+        "id"
+      ]
+    },
+    {
+      "name": "ratings",
+      "description": "Every provider's ratings for a title (IMDb, Rotten Tomatoes, Metacritic, TMDB…): {ratings: [{source, value, title, year}], errors?}.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "year": {
+            "type": "integer"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "movie",
+              "series"
+            ]
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "merge": {
+        "list": "ratings"
+      },
+      "route": [],
+      "ids": []
+    },
+    {
+      "name": "details",
+      "description": "One title: synopsis, genres, runtime, director, cast, ratings.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "An id from movies.search or movies.trending (provider:…)."
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "route": [
+        "id"
+      ],
+      "ids": [
+        "id"
+      ]
+    },
+    {
+      "name": "trending",
+      "description": "Films and series trending this week (and in cinemas): {results: [...]}.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "movie",
+              "series"
+            ]
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "merge": {
+        "list": "results"
+      },
+      "route": [],
+      "ids": [
+        "id"
+      ]
+    },
+    {
+      "name": "watch",
+      "description": "Where to watch a title in the user's country: streaming, rent, buy (data from JustWatch).",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "An id from movies.search or movies.trending (provider:…)."
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "route": [
+        "id"
+      ],
+      "ids": [
+        "id"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+id = "microsoft"
+name = "Microsoft"
+version = "0.1.0"
+description = "Mail and calendar provider for Microsoft accounts (Outlook.com, Hotmail, Microsoft 365) through Microsoft Graph."
+
+# Stdlib-only Python on Microsoft Graph. Sign-in is Samantha's: register your own app
+# (Entra, public client), put its client_id in [oauth.microsoft] of config.toml, then
+# `samantha account add microsoft`. The servers get access tokens from the daemon.
+[[mcp]]
+name = "mail"
+command = "python3"
+args = ["server.py", "mail"]
+
+[[mcp]]
+name = "calendar"
+command = "python3"
+args = ["server.py", "calendar"]
+
+# A provider: the model reaches it through mail.* and calendar.* (the fronts), whose
+# contracts set each method's policy (sending is always confirmed).
+[[provides]]
+capability = "mail"
+server = "mail"
+
+[[provides]]
+capability = "calendar"
+server = "calendar"
+
+[[oauth]]
+provider = "microsoft"
+scopes = ["User.Read", "Mail.ReadWrite", "Mail.Send", "Calendars.ReadWrite"]
+
+[needs]
+network = true

@@ -228,6 +228,27 @@ def parse_time(value, params):
     return t.replace(tzinfo=tz) if tz else t.astimezone()  # floating: local time
 
 
+# Video meeting links, as MeetingBar finds them: (pattern, service).
+MEETINGS = [
+    (r"zoom\.us/(?:j|my|w)/", "Zoom"), (r"meet\.google\.com/[a-z]{3}-", "Google Meet"),
+    (r"teams\.microsoft\.com/l/meetup-join", "Teams"), (r"teams\.live\.com/meet", "Teams"),
+    (r"webex\.com/", "Webex"), (r"meet\.jit\.si/", "Jitsi"), (r"whereby\.com/", "Whereby"),
+    (r"gotomeet(?:ing)?\.com/|meet\.goto\.com/", "GoTo Meeting"), (r"bluejeans\.com/", "BlueJeans"),
+    (r"chime\.aws/", "Amazon Chime"), (r"meet\.lync\.com/", "Skype for Business"),
+    (r"kmeet\.infomaniak\.com/", "kMeet"), (r"discord\.(?:gg|com)/", "Discord"),
+]
+URL = re.compile(r"https://[^\s<>\"'\\]+")
+
+
+def meeting(text):
+    """The first video meeting link in an event's text: {meeting_url, meeting}, or {}."""
+    for url in URL.findall(text or ""):
+        for pattern, service in MEETINGS:
+            if re.search(pattern, url):
+                return {"meeting_url": url.rstrip(").,;"), "meeting": service}
+    return {}
+
+
 def parse_ics(text):
     """VEVENTs as dicts: summary, start, end, location, description, uid, rrule, exdates, rid."""
     events, cur = [], None
@@ -255,7 +276,7 @@ def parse_ics(text):
                     cur["exdates"] += [parse_time(v, params) for v in value.split(",")]
             except ValueError:
                 continue
-            if name in ("SUMMARY", "LOCATION", "DESCRIPTION", "UID", "RRULE", "STATUS"):
+            if name in ("SUMMARY", "LOCATION", "DESCRIPTION", "UID", "RRULE", "STATUS", "URL"):
                 cur[name.lower()] = unescape(value) if name != "RRULE" else value
     return events
 
@@ -341,7 +362,8 @@ def expand(events, start, end):
                 continue
             out.append({"uid": e.get("uid", ""), "title": e.get("summary", ""),
                         "start": t, "end": as_dt(t) + length, "all_day": not isinstance(t, datetime.datetime),
-                        "location": e.get("location", ""), "description": e.get("description", "")[:500]})
+                        "location": e.get("location", ""), "description": e.get("description", "")[:500],
+                        **meeting(" ".join(e.get(k, "") for k in ("location", "url", "description")))})
     return out
 
 
@@ -371,7 +393,8 @@ def show(e):
     return {"title": e["title"], "calendar": e["calendar"], "account": e["account"], "all_day": e["all_day"],
             "start": local(e["start"]).strftime("%Y-%m-%d") if e["all_day"] else local(e["start"]).strftime("%Y-%m-%d %H:%M"),
             "end": local(e["end"]).strftime("%Y-%m-%d %H:%M"), "day": day_name(local(e["start"])),
-            "location": e["location"], "description": e["description"]}
+            "location": e["location"], "description": e["description"],
+            "meeting_url": e.get("meeting_url", ""), "meeting": e.get("meeting", "")}
 
 
 def day_name(t):
@@ -471,6 +494,8 @@ def remind_once():
         _announced.add(key)
         when = as_dt(e["start"]).astimezone().strftime("%H:%M")
         text = (f"À {when} · " if FRENCH else f"At {when} · ") + e["title"]
+        if e.get("meeting"):
+            text += f" · {e['meeting']}"
         publish("caldav.activity", {"key": key[:120], "text": text, "sub": e["location"],
                                       "icon": "mark", "ttl_s": max(60, int(lead * 60))})
         publish("calendar.soon", {"title": e["title"], "start": when, "location": e["location"],

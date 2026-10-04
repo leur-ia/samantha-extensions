@@ -11,6 +11,10 @@ Calendars can come from several providers (CalDAV accounts, iCal feeds, Google, 
 - `calendar.calendars {}`: the user's calendars and which accept new events.
 - `calendar.create {title, start, minutes?, location?, account?, calendar?}`: `start` is "YYYY-MM-DD HH:MM" local. With several providers, give `account` (from `calendar.calendars`, a writable one). Asked to the user first: repeat title, day and time.
 
+Meetings (like MeetingBar): an event with a video link has `meeting_url` and `meeting` (Teams, Zoom, Google Meet, Webex, Jitsi, kMeet…).
+- "Rejoins ma réunion", "lance la visio": `calendar.events` for today, take the event happening now (or the next one within 15 minutes), then `web.open` its `meeting_url`; say "J'ouvre <meeting> pour <title>." No link: say so, and give the place if any.
+- "C'est quoi ma prochaine réunion ?": the next event with its time, place and video service.
+
 Answering:
 - A day's agenda: times and titles in a short list, the first event highlighted ("Tu commences à 9 h 30 avec le stand-up"). Nothing: "Rien de prévu."
 - Resolve relative dates yourself from today's date ("jeudi prochain"), then call with `date`.

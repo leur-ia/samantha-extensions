@@ -1,6 +1,6 @@
 id = "caldav"
 name = "CalDAV calendars"
-version = "0.1.0"
+version = "0.2.0"
 description = "Calendar provider for CalDAV accounts (Infomaniak, Zoho, Fastmail, Nextcloud…) and iCal feeds: the calendar capability's methods; reminders before events."
 
 # Stdlib-only Python. Accounts in ~/.config/samantha/calendar.toml; each password or

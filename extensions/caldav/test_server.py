@@ -70,6 +70,13 @@ class Ics(unittest.TestCase):
         d = titles["Dentiste"]
         self.assertEqual(d["end"] - d["start"], datetime.timedelta(minutes=30))
 
+    def test_meeting_links(self):
+        self.assertEqual(server.meeting("Salle 2 https://teams.microsoft.com/l/meetup-join/19%3ameeting_x/0?context=y."),
+                         {"meeting_url": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_x/0?context=y", "meeting": "Teams"})
+        self.assertEqual(server.meeting("Rejoindre : https://meet.google.com/abc-defg-hij")["meeting"], "Google Meet")
+        self.assertEqual(server.meeting("https://example.org/agenda https://us02web.zoom.us/j/8123?pwd=x")["meeting"], "Zoom")
+        self.assertEqual(server.meeting("https://example.org/doc"), {})
+
     def test_count_and_daily(self):
         e = {"start": datetime.datetime(2026, 10, 1, 8, tzinfo=UTC), "end": datetime.datetime(2026, 10, 1, 9, tzinfo=UTC),
              "rrule": "FREQ=DAILY;INTERVAL=2;COUNT=3", "exdates": []}

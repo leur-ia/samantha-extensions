@@ -1,6 +1,6 @@
 id = "calendar"
 name = "Calendar"
-version = "0.2.0"
+version = "0.3.0"
 description = "The user's agenda across every calendar provider (CalDAV, iCal feeds, Google, Microsoft…): what's today, this week, find an event, add one."
 
 # The calendar front (docs/plans/providers.md in Samantha): its methods are served

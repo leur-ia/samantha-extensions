@@ -1,0 +1,8 @@
+id = "movies"
+name = "Movies"
+version = "0.1.0"
+description = "Films and series across providers (OMDb, TMDB…): find one, its ratings (IMDb, Rotten Tomatoes, Metacritic, TMDB), details, what's trending, where to watch."
+
+# The movies front: Samantha's daemon serves these methods from every provider of
+# `movies` (omdb, tmdb…), merged or routed by the provider prefix of ids.
+capability = "capability.json"

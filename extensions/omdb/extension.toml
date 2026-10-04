@@ -1,0 +1,20 @@
+id = "omdb"
+name = "OMDb"
+version = "0.1.0"
+description = "Movies provider: IMDb, Rotten Tomatoes and Metacritic ratings, search and details (OMDb API, your own key)."
+
+# Stdlib-only Python on omdbapi.com. Key: `samantha provider set-key omdb`.
+[[mcp]]
+name = "omdb"
+command = "python3"
+args = ["server.py"]
+secrets = { OMDB_KEY = "secret:omdb" }
+
+[[provides]]
+capability = "movies"
+server = "omdb"
+methods = ["search", "ratings", "details"]
+
+[needs]
+network = true
+secrets = ["omdb"]

@@ -23,14 +23,17 @@ implements them. Adding a service to a domain is writing a provider.
 |---|---|---|
 | audio | | Speakers, headphones, volume, mute, Bluetooth audio |
 | calendar | front | One agenda across calendar providers |
-| caldav | provider: calendar | CalDAV accounts and iCal feeds, reminders |
+| caldav | provider: calendar | CalDAV accounts and iCal feeds, meeting links, reminders |
 | discord | | The user's own bot: servers, channels, messages, send |
 | drives | | USB sticks and disks: mount, eject, plug notices |
 | home-assistant | | Home Assistant states and controls |
 | media | front | Everything playing, search and play across providers |
+| microsoft | provider: mail, calendar | Outlook mail and calendar (Teams links) through Microsoft Graph |
+| movies | front | Film ratings, details, trends, where to watch |
 | mpris | provider: media | Any MPRIS player |
 | notifications | | Notification history: what you missed |
 | notion | | Notion search, pages, databases, writes |
+| omdb | provider: movies | IMDb, Rotten Tomatoes, Metacritic ratings |
 | phone | | KDE Connect: ring, battery, SMS, share |
 | power | | Battery, power profile, brightness, suspend |
 | radio | provider: media | Live radio (radio-browser.info) |
@@ -38,6 +41,7 @@ implements them. Adding a service to a domain is writing a provider.
 | spotify | provider: media | Spotify catalog search and play |
 | system | | Load, processes, ports, errors, image updates |
 | timers | | Timers and alarms on the island |
+| tmdb | provider: movies | TMDB search, details, trends, where to watch (JustWatch) |
 | vpn | | NetworkManager VPNs |
 
 The mail front and its IMAP provider ship with Samantha itself.
