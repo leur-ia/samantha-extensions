@@ -1,0 +1,7 @@
+description = "Find restaurants across providers (Google Places, OpenStreetMap…): near a place, by cuisine, open now; details, ratings, and how to book."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/restaurants"
+commit = "caa617e07aed7372c058d5a1cc75391b4ed2405e"

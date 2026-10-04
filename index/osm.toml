@@ -1,0 +1,7 @@
+description = "Restaurants provider from OpenStreetMap: free, no account; cuisine, address, hours, phone, website (no ratings)."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/osm"
+commit = "caa617e07aed7372c058d5a1cc75391b4ed2405e"

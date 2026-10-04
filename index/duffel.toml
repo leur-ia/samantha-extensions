@@ -1,0 +1,7 @@
+description = "Flights provider: airports, offers from 300+ airlines and their conditions (Duffel API, your own token; search only, booking on the site you open)."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/duffel"
+commit = "caa617e07aed7372c058d5a1cc75391b4ed2405e"

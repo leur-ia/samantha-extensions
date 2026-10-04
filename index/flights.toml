@@ -1,0 +1,7 @@
+description = "Find flights across providers (Duffel…): airports, offers by price, details, and a link to book on the airline's or a comparator's site."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/flights"
+commit = "caa617e07aed7372c058d5a1cc75391b4ed2405e"

@@ -1,0 +1,7 @@
+description = "Restaurants provider: search with Google ratings, prices, opening hours, phone, reviews, reservations (Places API New, your own key)."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/google-places"
+commit = "caa617e07aed7372c058d5a1cc75391b4ed2405e"
