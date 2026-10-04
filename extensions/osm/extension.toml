@@ -1,0 +1,18 @@
+id = "osm"
+name = "OpenStreetMap"
+version = "0.1.0"
+description = "Restaurants provider from OpenStreetMap: free, no account; cuisine, address, hours, phone, website (no ratings)."
+
+# Stdlib-only Python on Nominatim and Overpass (public instances, their usage
+# policies respected). Data © OpenStreetMap contributors (ODbL).
+[[mcp]]
+name = "osm"
+command = "python3"
+args = ["server.py"]
+
+[[provides]]
+capability = "restaurants"
+server = "osm"
+
+[needs]
+network = true

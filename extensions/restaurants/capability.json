@@ -1,0 +1,87 @@
+{
+  "methods": [
+    {
+      "name": "search",
+      "description": "Restaurants matching a cuisine or name near a place: {results: [{id, name, address, cuisine, rating?, reviews?, price?, open_now?, phone?, website?, maps_url}], errors?}. Ratings come from providers that have them (Google).",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "near"
+        ],
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Cuisine or name: italien, sushi, pizzeria, La Merenda… (omitted: any)."
+          },
+          "near": {
+            "type": "string",
+            "description": "A city, neighbourhood or address (\"Nice\", \"Vieux-Nice\", \"12 rue de France, Nice\")."
+          },
+          "open_now": {
+            "type": "boolean"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "merge": {
+        "list": "results"
+      },
+      "route": [],
+      "ids": [
+        "id"
+      ]
+    },
+    {
+      "name": "details",
+      "description": "One restaurant: opening hours, phone, website, map, rating and a few reviews, whether it takes reservations.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A restaurant id from restaurants.search (provider:…)."
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "route": [
+        "id"
+      ],
+      "ids": [
+        "id"
+      ]
+    },
+    {
+      "name": "booking",
+      "description": "How to book a table: {reservable, booking_url?, website?, phone?, maps_url}. Samantha doesn't book: open the page or give the number.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A restaurant id from restaurants.search (provider:…)."
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "route": [
+        "id"
+      ],
+      "ids": [
+        "id"
+      ]
+    }
+  ]
+}

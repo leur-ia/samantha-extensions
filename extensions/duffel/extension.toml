@@ -1,0 +1,20 @@
+id = "duffel"
+name = "Duffel"
+version = "0.1.0"
+description = "Flights provider: airports, offers from 300+ airlines and their conditions (Duffel API, your own token; search only, booking on the site you open)."
+
+# Stdlib-only Python on api.duffel.com. Token: `samantha provider set-key duffel`
+# (a duffel_test_ token answers with Duffel's sandbox airline). Never books.
+[[mcp]]
+name = "duffel"
+command = "python3"
+args = ["server.py"]
+secrets = { DUFFEL_TOKEN = "secret:duffel" }
+
+[[provides]]
+capability = "flights"
+server = "duffel"
+
+[needs]
+network = true
+secrets = ["duffel"]

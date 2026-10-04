@@ -1,0 +1,21 @@
+id = "google-places"
+name = "Google Places"
+version = "0.1.0"
+description = "Restaurants provider: search with Google ratings, prices, opening hours, phone, reviews, reservations (Places API New, your own key)."
+
+# Stdlib-only Python on places.googleapis.com. In your Google Cloud project: enable
+# "Places API (New)", create an API key restricted to it (billing must be set up; the
+# monthly free usage covers personal use), `samantha provider set-key google-places`.
+[[mcp]]
+name = "places"
+command = "python3"
+args = ["server.py"]
+secrets = { GOOGLE_PLACES_KEY = "secret:google-places" }
+
+[[provides]]
+capability = "restaurants"
+server = "places"
+
+[needs]
+network = true
+secrets = ["google-places"]

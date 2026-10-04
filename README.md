@@ -26,8 +26,11 @@ implements them. Adding a service to a domain is writing a provider.
 | contacts | front | One address book across providers |
 | caldav | provider: calendar | CalDAV accounts and iCal feeds, meeting links, reminders |
 | discord | | The user's own bot: servers, channels, messages, send |
+| duffel | provider: flights | Flight offers from 300+ airlines (search only) |
 | drives | | USB sticks and disks: mount, eject, plug notices |
+| flights | front | Find and compare flights, a link to book |
 | google | provider: mail, calendar, contacts | Gmail, Google Calendar (Meet links, reminders), Google Contacts |
+| google-places | provider: restaurants | Google ratings, hours, reviews, reservations |
 | home-assistant | | Home Assistant states and controls |
 | media | front | Everything playing, search and play across providers |
 | microsoft | provider: mail, calendar | Outlook mail and calendar (Teams links) through Microsoft Graph |
@@ -36,9 +39,11 @@ implements them. Adding a service to a domain is writing a provider.
 | notifications | | Notification history: what you missed |
 | notion | | Notion search, pages, databases, writes |
 | omdb | provider: movies | IMDb, Rotten Tomatoes, Metacritic ratings |
+| osm | provider: restaurants | OpenStreetMap restaurants, free (no ratings) |
 | phone | | KDE Connect: ring, battery, SMS, share |
 | power | | Battery, power profile, brightness, suspend |
 | radio | provider: media | Live radio (radio-browser.info) |
+| restaurants | front | Find a restaurant, details, how to book |
 | slack | | The user's Slack through their own app token |
 | spotify | provider: media | Spotify catalog search and play |
 | system | | Load, processes, ports, errors, image updates |

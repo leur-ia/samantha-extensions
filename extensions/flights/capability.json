@@ -1,0 +1,106 @@
+{
+  "methods": [
+    {
+      "name": "places",
+      "description": "Airports and cities matching a name, with their IATA codes (Nice → NCE): {places: [{code, name, city, kind}]}.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "merge": {
+        "list": "places"
+      },
+      "route": [],
+      "ids": []
+    },
+    {
+      "name": "search",
+      "description": "Flight offers between two airports or cities (IATA codes), cheapest first: {offers: [{id, price, currency, airline, stops, duration, outbound: {departs, arrives, flights}, inbound?}], errors?}. Times are local to each airport.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "from",
+          "to",
+          "date"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "return_date": {
+            "type": "string",
+            "description": "YYYY-MM-DD, for a round trip"
+          },
+          "adults": {
+            "type": "integer"
+          },
+          "cabin": {
+            "type": "string",
+            "enum": [
+              "economy",
+              "premium_economy",
+              "business",
+              "first"
+            ]
+          },
+          "max_stops": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "merge": {
+        "list": "offers",
+        "sort": "price"
+      },
+      "route": [],
+      "ids": [
+        "id"
+      ]
+    },
+    {
+      "name": "details",
+      "description": "One offer: every segment, baggage, change and refund conditions, and where to book it.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "An offer id from flights.search (provider:…)."
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "route": [
+        "id"
+      ],
+      "ids": [
+        "id"
+      ]
+    }
+  ]
+}

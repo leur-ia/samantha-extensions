@@ -1,0 +1,9 @@
+id = "restaurants"
+name = "Restaurants"
+version = "0.1.0"
+description = "Find restaurants across providers (Google Places, OpenStreetMap…): near a place, by cuisine, open now; details, ratings, and how to book."
+
+# The restaurants front: Samantha's daemon serves it from every provider of
+# `restaurants`. Samantha finds and compares; booking happens on the restaurant's page
+# or by phone, which the user opens or calls.
+capability = "capability.json"

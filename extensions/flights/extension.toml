@@ -1,0 +1,8 @@
+id = "flights"
+name = "Flights"
+version = "0.1.0"
+description = "Find flights across providers (Duffel…): airports, offers by price, details, and a link to book on the airline's or a comparator's site."
+
+# The flights front: Samantha's daemon serves it from every provider of `flights`.
+# Samantha searches and compares; booking happens on a site the user opens.
+capability = "capability.json"
