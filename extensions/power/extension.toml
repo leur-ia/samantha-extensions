@@ -1,0 +1,34 @@
+id = "power"
+name = "Power"
+version = "0.1.0"
+description = "Battery, power profile (saver/balanced/performance), screen brightness, lock, suspend or hibernate now or later."
+
+# Stdlib-only Python: UPower, power-profiles-daemon and logind on the system bus
+# (busctl), brightnessctl for the backlight.
+[[mcp]]
+name = "power"
+command = "python3"
+args = ["server.py"]
+
+[needs]
+
+[tools."power.battery"]
+class = "read"
+data = "desktop"
+
+[tools."power.profile"]
+class = "reversible"
+data = "desktop"
+
+[tools."power.brightness"]
+class = "reversible"
+data = "desktop"
+
+# Suspending or locking interrupts what the user does: asked each time.
+[tools."power.session"]
+class = "confirm"
+data = "desktop"
+
+[tools."power.cancel"]
+class = "reversible"
+data = "desktop"

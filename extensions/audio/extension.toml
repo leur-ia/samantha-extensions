@@ -1,0 +1,35 @@
+id = "audio"
+name = "Audio"
+version = "0.1.0"
+description = "Sound devices: which speaker or headphones play, volume, mute, microphone; Bluetooth audio connect/disconnect."
+
+# Stdlib-only Python: PipeWire through pw-dump and wpctl (its socket: `audio`),
+# Bluetooth through bluetoothctl (the system bus, reachable from the sandbox).
+[[mcp]]
+name = "audio"
+command = "python3"
+args = ["server.py"]
+
+[needs]
+audio = true
+
+[tools."audio.devices"]
+class = "read"
+data = "desktop"
+
+# Each change is undone by the opposite one.
+[tools."audio.use"]
+class = "reversible"
+data = "desktop"
+
+[tools."audio.volume"]
+class = "reversible"
+data = "desktop"
+
+[tools."audio.bluetooth"]
+class = "read"
+data = "desktop"
+
+[tools."audio.bluetooth_connect"]
+class = "reversible"
+data = "desktop"

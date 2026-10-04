@@ -1,0 +1,42 @@
+id = "notion"
+name = "Notion"
+version = "0.1.0"
+description = "The user's Notion workspace (official API): search, read pages, query databases, create pages, append text, comment."
+
+# Stdlib-only Python on https://api.notion.com/v1 with an internal integration token
+# (`ntn_…`): create it at notion.so/profile/integrations, share pages with it
+# (page menu > Connections), then `samantha provider set-key notion`.
+[[mcp]]
+name = "notion"
+command = "python3"
+args = ["server.py"]
+secrets = { NOTION_TOKEN = "secret:notion" }
+
+[needs]
+network = true
+secrets = ["notion"]
+
+[tools."notion.search"]
+class = "read"
+data = "personal"
+
+[tools."notion.read_page"]
+class = "read"
+data = "personal"
+
+[tools."notion.query_database"]
+class = "read"
+data = "personal"
+
+# Writes are durable in a shared workspace: asked every time.
+[tools."notion.create_page"]
+class = "confirm"
+data = "personal"
+
+[tools."notion.append"]
+class = "confirm"
+data = "personal"
+
+[tools."notion.comment"]
+class = "confirm"
+data = "personal"

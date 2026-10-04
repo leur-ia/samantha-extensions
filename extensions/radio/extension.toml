@@ -1,0 +1,37 @@
+id = "radio"
+name = "Radio"
+version = "0.1.0"
+description = "Live radio from around the world (radio-browser.info): find a station by name, country or genre, play, stop."
+
+# Stdlib-only Python. The catalog is radio-browser.info (community, free, no account);
+# streams play through ffplay (FFmpeg) as a child of the server, on PipeWire.
+[[mcp]]
+name = "radio"
+command = "python3"
+args = ["server.py"]
+
+[needs]
+network = true
+audio = true
+
+[[event]]
+type = "radio.activity"
+data_class = "desktop"
+
+# Public catalog data.
+[tools."radio.search"]
+class = "read"
+data = "web"
+
+[tools."radio.now"]
+class = "read"
+data = "desktop"
+
+# Stopped or replaced at once.
+[tools."radio.play"]
+class = "reversible"
+data = "desktop"
+
+[tools."radio.stop"]
+class = "reversible"
+data = "desktop"

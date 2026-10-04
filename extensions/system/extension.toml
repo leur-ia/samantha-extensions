@@ -1,0 +1,49 @@
+id = "system"
+name = "System"
+version = "0.1.0"
+description = "What the computer is doing: load, memory, disks, temperatures, busiest processes, open ports, failed services, recent errors, system image updates."
+
+# Stdlib-only Python reading /proc and /sys; systemctl, journalctl and rpm-ostree for
+# services, errors and the image (system bus; the session bus for user units).
+[[mcp]]
+name = "system"
+command = "python3"
+args = ["server.py"]
+
+[needs]
+dbus_session = true
+
+[tools."system.overview"]
+class = "read"
+data = "desktop"
+
+[tools."system.processes"]
+class = "read"
+data = "desktop"
+
+# A command line can carry a token or a path the user would keep private.
+[tools."system.process"]
+class = "read"
+data = "personal"
+
+[tools."system.ports"]
+class = "read"
+data = "desktop"
+
+[tools."system.services"]
+class = "read"
+data = "desktop"
+
+# Journal messages can mention anything.
+[tools."system.errors"]
+class = "read"
+data = "personal"
+
+[tools."system.updates"]
+class = "read"
+data = "desktop"
+
+# Ends a program, possibly losing its unsaved work.
+[tools."system.stop"]
+class = "confirm"
+data = "desktop"

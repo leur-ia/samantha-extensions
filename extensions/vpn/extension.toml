@@ -1,0 +1,24 @@
+id = "vpn"
+name = "VPN"
+version = "0.1.0"
+description = "VPN connections NetworkManager knows (WireGuard, OpenVPN, Proton…): status, connect, disconnect."
+
+# Stdlib-only Python driving NetworkManager through nmcli on the system bus.
+[[mcp]]
+name = "vpn"
+command = "python3"
+args = ["server.py"]
+
+[needs]
+
+[tools."vpn.status"]
+class = "read"
+data = "desktop"
+
+[tools."vpn.connect"]
+class = "reversible"
+data = "desktop"
+
+[tools."vpn.disconnect"]
+class = "reversible"
+data = "desktop"

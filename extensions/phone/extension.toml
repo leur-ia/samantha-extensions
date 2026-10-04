@@ -1,0 +1,48 @@
+id = "phone"
+name = "Phone"
+version = "0.1.0"
+description = "The user's phone through KDE Connect: ring it, battery, its notifications, send an SMS, share a file or link."
+
+# Stdlib-only Python driving kdeconnectd (the image ships KDE Connect) through
+# kdeconnect-cli and busctl on the session bus. The phone runs the KDE Connect app.
+[[mcp]]
+name = "phone"
+command = "python3"
+args = ["server.py"]
+
+[needs]
+dbus_session = true
+
+[tools."phone.devices"]
+class = "read"
+data = "personal"
+
+[tools."phone.battery"]
+class = "read"
+data = "personal"
+
+[tools."phone.notifications"]
+class = "read"
+data = "personal"
+
+# Rings or shows something on the user's own phone: nothing lasting.
+[tools."phone.ring"]
+class = "reversible"
+data = "personal"
+
+[tools."phone.message"]
+class = "reversible"
+data = "personal"
+
+[tools."phone.share"]
+class = "reversible"
+data = "personal"
+
+# Sends a text to someone: confirmed every time.
+[tools."phone.send_sms"]
+class = "confirm"
+data = "personal"
+
+[tools."phone.pair"]
+class = "confirm"
+data = "personal"

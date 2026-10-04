@@ -1,0 +1,37 @@
+id = "home-assistant"
+name = "Home Assistant"
+version = "0.1.0"
+description = "The user's Home Assistant: states of lights, sensors, climate…; everyday controls; other services confirmed."
+
+# Stdlib-only Python on Home Assistant's REST API. Address in
+# ~/.config/samantha/home-assistant.toml; long-lived token stored with
+# `samantha provider set-key home-assistant`.
+[[mcp]]
+name = "ha"
+command = "python3"
+args = ["server.py"]
+secrets = { HA_TOKEN = "secret:home-assistant" }
+
+[needs]
+network = true
+read = ["~/.config/samantha/home-assistant.toml"]
+secrets = ["home-assistant"]
+
+# What's on at home, who's home (presence sensors): personal.
+[tools."ha.entities"]
+class = "read"
+data = "personal"
+
+[tools."ha.state"]
+class = "read"
+data = "personal"
+
+# Lights, switches, blinds, climate, players, scenes: undone by the opposite action.
+[tools."ha.control"]
+class = "reversible"
+data = "personal"
+
+# Locks, alarm, garage, scripts: the user confirms every call.
+[tools."ha.call_service"]
+class = "confirm"
+data = "personal"

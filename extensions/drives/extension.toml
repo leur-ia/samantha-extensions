@@ -1,0 +1,38 @@
+id = "drives"
+name = "Drives"
+version = "0.1.0"
+description = "USB sticks, SD cards and external disks: what's plugged in, mount, safely eject; an island notice when one is plugged."
+
+# Stdlib-only Python: lsblk to list, udisksctl to mount and eject (polkit allows the
+# user's removable media); polled every 3 s for plug events.
+[[mcp]]
+name = "drives"
+command = "python3"
+args = ["server.py"]
+
+[needs]
+
+[[event]]
+type = "drives.activity"
+data_class = "desktop"
+
+[[event]]
+type = "drives.added"
+data_class = "desktop"
+
+[tools."drives.list"]
+class = "read"
+data = "desktop"
+
+[tools."drives.mount"]
+class = "reversible"
+data = "desktop"
+
+[tools."drives.unmount"]
+class = "reversible"
+data = "desktop"
+
+# Powers the drive off: unplug and plug back to use it again.
+[tools."drives.eject"]
+class = "reversible"
+data = "desktop"

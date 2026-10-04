@@ -1,0 +1,38 @@
+id = "discord"
+name = "Discord"
+version = "0.1.0"
+description = "Discord through the user's own bot (official API): servers, channels, recent messages, send and react."
+
+# Stdlib-only Python on the Discord REST API v10 with a BOT token of the user's own
+# application, invited to their servers. User-account tokens (self-bots) break
+# Discord's terms and get accounts banned: never supported. Setup: skills/discord.
+[[mcp]]
+name = "discord"
+command = "python3"
+args = ["server.py"]
+secrets = { DISCORD_TOKEN = "secret:discord" }
+
+[needs]
+network = true
+secrets = ["discord"]
+
+[tools."discord.servers"]
+class = "read"
+data = "personal"
+
+[tools."discord.channels"]
+class = "read"
+data = "personal"
+
+[tools."discord.messages"]
+class = "read"
+data = "personal"
+
+# Undone by removing the reaction.
+[tools."discord.react"]
+class = "reversible"
+data = "personal"
+
+[tools."discord.send"]
+class = "confirm"
+data = "personal"

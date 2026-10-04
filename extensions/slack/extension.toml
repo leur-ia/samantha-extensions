@@ -1,0 +1,50 @@
+id = "slack"
+name = "Slack"
+version = "0.1.0"
+description = "The user's Slack (official Web API, own app token): channels, history, threads, search, unread, send and react."
+
+# Stdlib-only Python on https://slack.com/api with the token of the user's own internal
+# Slack app (user token xoxp-… preferred; bot token xoxb-… works without search/unread).
+# Stored with `samantha provider set-key slack`. Browser session tokens (xoxc/xoxd) are
+# refused. Setup: skills/slack/SKILL.md.
+[[mcp]]
+name = "slack"
+command = "python3"
+args = ["server.py"]
+secrets = { SLACK_TOKEN = "secret:slack" }
+
+[needs]
+network = true
+secrets = ["slack"]
+
+# No [[event]]: new messages would need polling conversations.history per channel
+# (rate-limited); the Events API needs a public endpoint or Socket Mode.
+
+[tools."slack.channels"]
+class = "read"
+data = "personal"
+
+[tools."slack.history"]
+class = "read"
+data = "personal"
+
+[tools."slack.thread"]
+class = "read"
+data = "personal"
+
+[tools."slack.search"]
+class = "read"
+data = "personal"
+
+[tools."slack.unread"]
+class = "read"
+data = "personal"
+
+# Undone by removing the reaction in Slack.
+[tools."slack.react"]
+class = "reversible"
+data = "personal"
+
+[tools."slack.send"]
+class = "confirm"
+data = "personal"

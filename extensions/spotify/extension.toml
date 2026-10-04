@@ -1,0 +1,48 @@
+id = "spotify"
+name = "Spotify"
+version = "0.1.0"
+description = "Spotify desktop app: what's playing, play/pause/next, open a track or artist; catalog search (official Web API)."
+
+# Stdlib-only Python, one server.py run as two servers so that local control works
+# without any Spotify account setup.
+# `player` drives the flatpak com.spotify.Client over MPRIS (session bus, `busctl --user`).
+[[mcp]]
+name = "player"
+command = "python3"
+args = ["server.py", "player"]
+
+# `catalog` searches the official Web API with the Client Credentials flow of the user's
+# own developer app (developer.spotify.com; since Feb 2026 the app owner needs Premium).
+# Store the keys with `samantha provider set-key spotify-client-id` and
+# `samantha provider set-key spotify-client-secret`. Until both exist this server does
+# not start (only `search` is missing).
+[[mcp]]
+name = "catalog"
+command = "python3"
+args = ["server.py", "catalog"]
+secrets = { SPOTIFY_CLIENT_ID = "secret:spotify-client-id", SPOTIFY_CLIENT_SECRET = "secret:spotify-client-secret" }
+
+# The network for search only; the session bus for MPRIS. No home access.
+[needs]
+network = true
+dbus_session = true
+secrets = ["spotify-client-id", "spotify-client-secret"]
+
+[tools."player.now_playing"]
+class = "read"
+data = "desktop"
+
+# Undone with the opposite action.
+[tools."player.control"]
+class = "reversible"
+data = "desktop"
+
+# Starts something else playing; the previous track is one `previous` away.
+[tools."player.open"]
+class = "reversible"
+data = "desktop"
+
+# Public catalog data.
+[tools."catalog.search"]
+class = "read"
+data = "web"

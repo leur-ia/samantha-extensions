@@ -1,0 +1,30 @@
+id = "media"
+name = "Media"
+version = "0.1.0"
+description = "Any media player (MPRIS: Spotify, browsers, YouTube Music, VLC…): what's playing, play/pause/next, player volume."
+
+# Stdlib-only Python driving MPRIS players on the session bus with `busctl --user`.
+[[mcp]]
+name = "media"
+command = "python3"
+args = ["server.py"]
+
+[needs]
+dbus_session = true
+
+[tools."media.players"]
+class = "read"
+data = "desktop"
+
+[tools."media.now_playing"]
+class = "read"
+data = "desktop"
+
+# Undone with the opposite action.
+[tools."media.control"]
+class = "reversible"
+data = "desktop"
+
+[tools."media.volume"]
+class = "reversible"
+data = "desktop"

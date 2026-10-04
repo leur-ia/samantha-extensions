@@ -1,0 +1,32 @@
+id = "notifications"
+name = "Notifications"
+version = "0.1.0"
+description = "Notification history: what the user was notified of and missed (7 days), searchable."
+
+# Stdlib-only Python watching Notify calls on the session bus (`busctl --user monitor`)
+# and keeping them owner-only in ~/.local/state/samantha/notifications for 7 days.
+[[mcp]]
+name = "notifications"
+command = "python3"
+args = ["server.py"]
+
+[needs]
+dbus_session = true
+write = ["~/.local/state/samantha/notifications"]
+
+# Notification text can be anything: messages, codes, mail subjects.
+[tools."notifications.recent"]
+class = "read"
+data = "personal"
+
+[tools."notifications.search"]
+class = "read"
+data = "personal"
+
+[tools."notifications.apps"]
+class = "read"
+data = "personal"
+
+[tools."notifications.clear"]
+class = "confirm"
+data = "personal"

@@ -1,0 +1,35 @@
+id = "timers"
+name = "Timers"
+version = "0.1.0"
+description = "Timers, alarms and pomodoros: shown on the island, ringing at the end, kept across restarts."
+
+# Stdlib-only Python. State in ~/.local/state/samantha/timers; the end rings with the
+# freedesktop alarm sound through PipeWire and is a `timers.done` event for watchers.
+[[mcp]]
+name = "timers"
+command = "python3"
+args = ["server.py"]
+
+[needs]
+audio = true
+write = ["~/.local/state/samantha/timers"]
+
+[[event]]
+type = "timers.activity"
+data_class = "desktop"
+
+[[event]]
+type = "timers.done"
+data_class = "desktop"
+
+[tools."timers.start"]
+class = "reversible"
+data = "desktop"
+
+[tools."timers.list"]
+class = "read"
+data = "desktop"
+
+[tools."timers.cancel"]
+class = "reversible"
+data = "desktop"
