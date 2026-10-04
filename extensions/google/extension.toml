@@ -1,0 +1,57 @@
+id = "google"
+name = "Google"
+version = "0.1.0"
+description = "Mail, calendar and contacts provider for Google accounts: Gmail, Google Calendar (Meet links, reminders), Google Contacts."
+
+# Stdlib-only Python on Google's APIs. Sign-in is Samantha's: your own OAuth client
+# ("Desktop app") in [oauth.google] of config.toml, then `samantha account add google`.
+# In your Google Cloud project, enable the Gmail, Google Calendar and People APIs.
+[[mcp]]
+name = "mail"
+command = "python3"
+args = ["server.py", "mail"]
+
+[[mcp]]
+name = "calendar"
+command = "python3"
+args = ["server.py", "calendar"]
+
+[[mcp]]
+name = "contacts"
+command = "python3"
+args = ["server.py", "contacts"]
+
+# A provider: the model reaches it through mail.*, calendar.* and contacts.* (the
+# fronts), whose contracts set each method's policy (sending is always confirmed).
+[[provides]]
+capability = "mail"
+server = "mail"
+
+[[provides]]
+capability = "calendar"
+server = "calendar"
+
+[[provides]]
+capability = "contacts"
+server = "contacts"
+
+[[oauth]]
+provider = "google"
+scopes = [
+  "https://www.googleapis.com/auth/gmail.modify",
+  "https://www.googleapis.com/auth/calendar",
+  "https://www.googleapis.com/auth/contacts.readonly",
+  "https://www.googleapis.com/auth/contacts.other.readonly",
+]
+
+# 10 minutes before an event: an island activity, and calendar.soon for watchers.
+[[event]]
+type = "google.activity"
+data_class = "personal"
+
+[[event]]
+type = "calendar.soon"
+data_class = "personal"
+
+[needs]
+network = true

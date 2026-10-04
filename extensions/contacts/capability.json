@@ -1,0 +1,38 @@
+{
+  "methods": [
+    {
+      "name": "search",
+      "description": "Find people by name, address or company across providers: {contacts: [{id, account, name, emails, phones, organization, kind}], errors?}; kind other: someone the user emailed, not saved.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "account": {
+            "type": "string",
+            "description": "provider:account; omitted: every account."
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "contacts"
+      },
+      "route": [
+        "account"
+      ],
+      "ids": [
+        "id",
+        "account"
+      ]
+    }
+  ]
+}

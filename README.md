@@ -23,9 +23,11 @@ implements them. Adding a service to a domain is writing a provider.
 |---|---|---|
 | audio | | Speakers, headphones, volume, mute, Bluetooth audio |
 | calendar | front | One agenda across calendar providers |
+| contacts | front | One address book across providers |
 | caldav | provider: calendar | CalDAV accounts and iCal feeds, meeting links, reminders |
 | discord | | The user's own bot: servers, channels, messages, send |
 | drives | | USB sticks and disks: mount, eject, plug notices |
+| google | provider: mail, calendar, contacts | Gmail, Google Calendar (Meet links, reminders), Google Contacts |
 | home-assistant | | Home Assistant states and controls |
 | media | front | Everything playing, search and play across providers |
 | microsoft | provider: mail, calendar | Outlook mail and calendar (Teams links) through Microsoft Graph |
