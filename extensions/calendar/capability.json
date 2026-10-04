@@ -1,0 +1,96 @@
+{
+  "methods": [
+    {
+      "name": "events",
+      "description": "Events from every calendar (or one account), soonest first: `days` from `date` (default today, 1 day; up to 62), optional search on title, place and notes. Times are local; `day` is today/tomorrow/weekday. {events: [{title, calendar, account, start, end, day, all_day, location, description}], errors?}.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "days": {
+            "type": "integer"
+          },
+          "account": {
+            "type": "string",
+            "description": "An account from calendar.calendars (provider:name, e.g. caldav:ik); omitted: every account."
+          },
+          "search": {
+            "type": "string"
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "events",
+        "sort": "start"
+      },
+      "route": [
+        "account"
+      ],
+      "ids": [
+        "account"
+      ]
+    },
+    {
+      "name": "calendars",
+      "description": "The user's calendars across providers: account (provider:name), calendar name, whether events can be added.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "calendars"
+      },
+      "route": [],
+      "ids": [
+        "account"
+      ]
+    },
+    {
+      "name": "create",
+      "description": "Add an event: title, start (YYYY-MM-DD HH:MM local), minutes (default 60), optional location; account (provider:name) and calendar name pick where.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "title",
+          "start"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string"
+          },
+          "minutes": {
+            "type": "integer"
+          },
+          "location": {
+            "type": "string"
+          },
+          "account": {
+            "type": "string",
+            "description": "An account from calendar.calendars (provider:name, e.g. caldav:ik); omitted: every account."
+          },
+          "calendar": {
+            "type": "string"
+          }
+        }
+      },
+      "class": "confirm",
+      "data": "personal",
+      "route": [
+        "account"
+      ],
+      "ids": [
+        "account"
+      ]
+    }
+  ]
+}

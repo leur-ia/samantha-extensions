@@ -69,7 +69,7 @@ class Radio(unittest.TestCase):
         d = Directory(fail_first=True)
         with mock.patch("urllib.request.urlopen", d):
             r = call("search", {"query": "france inter", "country": "fr"})["structuredContent"]
-        self.assertEqual(r["stations"][0]["name"], "France Inter")
+        self.assertEqual(r["results"][0]["name"], "France Inter")
         self.assertIn("countrycode=FR", d.urls[1])
         self.assertTrue(d.urls[1].startswith(server.MIRRORS[1]))
         self.assertTrue(call("search", {})["isError"])
@@ -94,7 +94,7 @@ class Radio(unittest.TestCase):
 
     def test_protocol(self):
         tools = server.handle({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})["result"]["tools"]
-        self.assertEqual([t["name"] for t in tools], ["search", "play", "stop", "now"])
+        self.assertEqual([t["name"] for t in tools], ["search", "play", "players", "control", "stop", "now"])
 
 
 if __name__ == "__main__":

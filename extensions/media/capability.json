@@ -1,0 +1,139 @@
+{
+  "methods": [
+    {
+      "name": "players",
+      "description": "Everything that can play, from every provider: player (provider:name), name, state (playing, paused, stopped), title, artists, album.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "class": "read",
+      "data": "desktop",
+      "merge": {
+        "list": "players"
+      },
+      "route": [],
+      "ids": [
+        "player"
+      ]
+    },
+    {
+      "name": "control",
+      "description": "Play, pause, toggle, next, previous or stop a player (from media.players).",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "player",
+          "action"
+        ],
+        "properties": {
+          "player": {
+            "type": "string",
+            "description": "A player from media.players (provider:name, e.g. mpris:spotify, radio:radio)."
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "play",
+              "pause",
+              "toggle",
+              "next",
+              "previous",
+              "stop"
+            ]
+          }
+        }
+      },
+      "class": "reversible",
+      "data": "desktop",
+      "route": [
+        "player"
+      ],
+      "ids": [
+        "player"
+      ]
+    },
+    {
+      "name": "volume",
+      "description": "A player's own volume, 0 to 100 (the system volume is audio.volume).",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "player",
+          "level"
+        ],
+        "properties": {
+          "player": {
+            "type": "string",
+            "description": "A player from media.players (provider:name, e.g. mpris:spotify, radio:radio)."
+          },
+          "level": {
+            "type": "number"
+          }
+        }
+      },
+      "class": "reversible",
+      "data": "desktop",
+      "route": [
+        "player"
+      ],
+      "ids": [
+        "player"
+      ]
+    },
+    {
+      "name": "search",
+      "description": "Find something to play across providers: tracks, albums, artists, playlists (Spotify…), radio stations. kind narrows it (track, album, artist, playlist, station). {results: [{id, kind, name, artists?, country?…}], errors?}",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "merge": {
+        "list": "results"
+      },
+      "route": [],
+      "ids": [
+        "id"
+      ]
+    },
+    {
+      "name": "play",
+      "description": "Play a result of media.search (its id).",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "An id from media.search (provider:…)."
+          }
+        }
+      },
+      "class": "reversible",
+      "data": "desktop",
+      "route": [
+        "id"
+      ],
+      "ids": [
+        "id"
+      ]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 id = "radio"
 name = "Radio"
-version = "0.1.0"
+version = "0.2.0"
 description = "Live radio from around the world (radio-browser.info): find a station by name, country or genre, play, stop."
 
 # Stdlib-only Python. The catalog is radio-browser.info (community, free, no account);
@@ -9,6 +9,12 @@ description = "Live radio from around the world (radio-browser.info): find a sta
 name = "radio"
 command = "python3"
 args = ["server.py"]
+
+# A media provider: stations through media.search and media.play, the radio as a player.
+[[provides]]
+capability = "media"
+server = "radio"
+methods = ["players", "control", "search", "play"]
 
 [needs]
 network = true

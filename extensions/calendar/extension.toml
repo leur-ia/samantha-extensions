@@ -1,39 +1,9 @@
 id = "calendar"
 name = "Calendar"
-version = "0.1.0"
-description = "The user's calendars (CalDAV: Infomaniak, Zoho, Fastmail, Nextcloud…; iCal feeds like Google's): agenda, search, add events, reminders before meetings."
+version = "0.2.0"
+description = "The user's agenda across every calendar provider (CalDAV, iCal feeds, Google, Microsoft…): what's today, this week, find an event, add one."
 
-# Stdlib-only Python. Accounts in ~/.config/samantha/calendar.toml; each password or
-# secret feed address is the Secret Service item calendar-<account>
-# (`samantha provider set-key calendar-<account>`), asked of the daemon at use.
-[[mcp]]
-name = "calendar"
-command = "python3"
-args = ["server.py"]
-
-[needs]
-network = true
-read = ["~/.config/samantha/calendar.toml"]
-secrets = ["calendar-*"]
-
-# 10 minutes before an event: an island activity and an event for watchers.
-[[event]]
-type = "calendar.activity"
-data_class = "personal"
-
-[[event]]
-type = "calendar.soon"
-data_class = "personal"
-
-[tools."calendar.events"]
-class = "read"
-data = "personal"
-
-[tools."calendar.calendars"]
-class = "read"
-data = "personal"
-
-# Writes to the user's calendar, seen by everyone it is shared with.
-[tools."calendar.create"]
-class = "confirm"
-data = "personal"
+# The calendar front (docs/plans/providers.md in Samantha): its methods are served
+# by Samantha's daemon from every provider (`[[provides]] capability = "calendar"`:
+# caldav, google, microsoft…), merged or routed by the provider prefix of accounts.
+capability = "capability.json"

@@ -1,6 +1,6 @@
 id = "spotify"
 name = "Spotify"
-version = "0.1.0"
+version = "0.2.0"
 description = "Spotify desktop app: what's playing, play/pause/next, open a track or artist; catalog search (official Web API)."
 
 # Stdlib-only Python, one server.py run as two servers so that local control works
@@ -22,6 +22,18 @@ command = "python3"
 args = ["server.py", "catalog"]
 secrets = { SPOTIFY_CLIENT_ID = "secret:spotify-client-id", SPOTIFY_CLIENT_SECRET = "secret:spotify-client-secret" }
 
+# A media provider: search the catalog, play a result (the front: media.*).
+# The player itself is reached through the mpris provider like any MPRIS player.
+[[provides]]
+capability = "media"
+server = "catalog"
+methods = ["search"]
+
+[[provides]]
+capability = "media"
+server = "player"
+methods = ["play"]
+
 # The network for search only; the session bus for MPRIS. No home access.
 [needs]
 network = true
@@ -38,7 +50,7 @@ class = "reversible"
 data = "desktop"
 
 # Starts something else playing; the previous track is one `previous` away.
-[tools."player.open"]
+[tools."player.play"]
 class = "reversible"
 data = "desktop"
 

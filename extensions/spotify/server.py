@@ -129,7 +129,7 @@ def control(args):
 
 
 def open_uri(args):
-    uri = args.get("uri")
+    uri = args.get("id") or args.get("uri")
     if not isinstance(uri, str) or not URI.match(uri):
         raise Failure("URI invalide: attendu spotify:track|album|playlist|artist|show|"
                       "episode:<id> (prends l'uri renvoyée par spotify.search)")
@@ -189,7 +189,8 @@ def row(kind, item):
         by = (item.get("owner") or {}).get("display_name") or ""
     else:
         by = ", ".join(a.get("name", "") for a in artists if isinstance(a, dict))
-    out = {"name": item.get("name") or "", "artists": by, "uri": item.get("uri") or ""}
+    uri = item.get("uri") or ""
+    out = {"id": uri, "kind": kind, "name": item.get("name") or "", "artists": by, "uri": uri}
     if kind == "track":
         out["album"] = (item.get("album") or {}).get("name") or ""
     return out
@@ -199,7 +200,9 @@ def search(args):
     query = args.get("query")
     if not isinstance(query, str) or not query.strip():
         raise Failure("Recherche vide: donne un titre, un artiste ou un album")
-    kind = args.get("type") or "track"
+    kind = args.get("kind") or args.get("type") or "track"
+    if kind == "station":
+        return {"type": kind, "results": []}  # radio stations aren't Spotify's
     if kind not in TYPES:
         raise Failure(f"Type inconnu: {kind!r} (track, album, playlist, artist)")
     limit = max(1, min(10, int(args.get("limit") or 5)))  # the API caps at 10
@@ -232,11 +235,11 @@ PLAYER_TOOLS = {
             "action": {"type": "string", "enum": list(ACTIONS)}}},
         "outputSchema": {"type": "object", "properties": {"done": S}},
     }),
-    "open": (open_uri, {
+    "play": (open_uri, {
         "description": "Play a spotify: URI (track, album, playlist, artist, show, "
                        "episode) in the Spotify app, e.g. one from spotify.search.",
-        "inputSchema": {"type": "object", "required": ["uri"], "properties": {
-            "uri": {"type": "string", "pattern": URI.pattern}}},
+        "inputSchema": {"type": "object", "required": ["id"], "properties": {
+            "id": {"type": "string", "pattern": URI.pattern}}},
         "outputSchema": {"type": "object", "properties": {"opened": S}},
     }),
 }

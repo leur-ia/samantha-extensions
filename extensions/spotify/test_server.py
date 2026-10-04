@@ -67,15 +67,15 @@ class Player(unittest.TestCase):
         with mock.patch("subprocess.run", bus):
             self.assertFalse(call("control", {"action": "toggle"})["isError"])
             self.assertTrue(call("control", {"action": "stop"})["isError"])
-            self.assertFalse(call("open", {"uri": "spotify:artist:0gxyHStUsqpMadRV0Di1Qt"})["isError"])
-            self.assertTrue(call("open", {"uri": "https://open.spotify.com/x"})["isError"])
-            self.assertTrue(call("open", {"uri": "spotify:track:x; rm -rf"})["isError"])
+            self.assertFalse(call("play", {"id": "spotify:artist:0gxyHStUsqpMadRV0Di1Qt"})["isError"])
+            self.assertTrue(call("play", {"id": "https://open.spotify.com/x"})["isError"])
+            self.assertTrue(call("play", {"id": "spotify:track:x; rm -rf"})["isError"])
         self.assertEqual(bus.calls[0][-1], "PlayPause")
         self.assertEqual(bus.calls[1][-3:], ["OpenUri", "s", "spotify:artist:0gxyHStUsqpMadRV0Di1Qt"])
         self.assertEqual(len(bus.calls), 2, "invalid input never reaches the bus")
 
     def test_player_role_lists_only_player_tools(self):
-        self.assertEqual(set(server.PLAYER_TOOLS), {"now_playing", "control", "open"})
+        self.assertEqual(set(server.PLAYER_TOOLS), {"now_playing", "control", "play"})
         self.assertEqual(set(server.CATALOG_TOOLS), {"search"})
 
 
@@ -104,7 +104,8 @@ class Catalog(unittest.TestCase):
             r = call("search", {"query": "song", "limit": 50})
             call("search", {"query": "other"})
         self.assertEqual(r["structuredContent"]["results"],
-                         [{"name": "Song", "artists": "A, B", "uri": "spotify:track:abc", "album": "Al"}])
+                         [{"id": "spotify:track:abc", "kind": "track", "name": "Song", "artists": "A, B",
+                           "uri": "spotify:track:abc", "album": "Al"}])
         urls = [q.full_url for q in api.requests]
         self.assertEqual(urls.count(server.TOKEN_URL), 1, "one token for both searches")
         self.assertIn("limit=10", urls[1], "capped at the API's 10")

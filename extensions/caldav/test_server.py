@@ -154,7 +154,7 @@ class CalDav(unittest.TestCase):
             server.remind_once()
             server.remind_once()
         kinds = [k for k, _ in published]
-        self.assertEqual(kinds, ["calendar.activity", "calendar.soon"])
+        self.assertEqual(kinds, ["caldav.activity", "calendar.soon"])
         self.assertIn("Réunion", published[0][1]["text"])
 
     def test_no_config(self):

@@ -1,30 +1,9 @@
 id = "media"
 name = "Media"
-version = "0.1.0"
-description = "Any media player (MPRIS: Spotify, browsers, YouTube Music, VLC…): what's playing, play/pause/next, player volume."
+version = "0.2.0"
+description = "Music, radio and everything playing, whatever the provider (MPRIS players, Spotify, radio…): what's playing, play/pause/next, volume, find and play something."
 
-# Stdlib-only Python driving MPRIS players on the session bus with `busctl --user`.
-[[mcp]]
-name = "media"
-command = "python3"
-args = ["server.py"]
-
-[needs]
-dbus_session = true
-
-[tools."media.players"]
-class = "read"
-data = "desktop"
-
-[tools."media.now_playing"]
-class = "read"
-data = "desktop"
-
-# Undone with the opposite action.
-[tools."media.control"]
-class = "reversible"
-data = "desktop"
-
-[tools."media.volume"]
-class = "reversible"
-data = "desktop"
+# The media front (docs/plans/providers.md in Samantha): served by Samantha's daemon
+# from every provider of `media` (mpris, spotify, radio…), merged or routed by the
+# provider prefix of players and ids.
+capability = "capability.json"

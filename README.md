@@ -14,24 +14,33 @@ stdio MCP server in Python 3 standard library only, its tests (no network), and 
 They use official access only: public APIs with the user's own tokens, D-Bus, the
 system's own tools. Secrets live in the Secret Service, never in files.
 
-| Extension | What Samantha gets |
-|---|---|
-| audio | Speakers, headphones, volume, mute, Bluetooth audio |
-| calendar | CalDAV and iCal agenda, new events, reminders |
-| discord | The user's own bot: servers, channels, messages, send |
-| drives | USB sticks and disks: mount, eject, plug notices |
-| home-assistant | Home Assistant states and controls |
-| media | Any MPRIS player |
-| notifications | Notification history: what you missed |
-| notion | Notion search, pages, databases, writes |
-| phone | KDE Connect: ring, battery, SMS, share |
-| power | Battery, power profile, brightness, suspend |
-| radio | Live radio (radio-browser.info) |
-| slack | The user's Slack through their own app token |
-| spotify | Spotify desktop control and catalog search |
-| system | Load, processes, ports, errors, image updates |
-| timers | Timers and alarms on the island |
-| vpn | NetworkManager VPNs |
+Some are **fronts**: the one way Samantha talks about a domain (`mail`, `calendar`,
+`media`…), served from every **provider** of it. A front declares its methods in
+`capability.json`; a provider declares `[[provides]] capability = "media"` and
+implements them. Adding a service to a domain is writing a provider.
+
+| Extension | Kind | What Samantha gets |
+|---|---|---|
+| audio | | Speakers, headphones, volume, mute, Bluetooth audio |
+| calendar | front | One agenda across calendar providers |
+| caldav | provider: calendar | CalDAV accounts and iCal feeds, reminders |
+| discord | | The user's own bot: servers, channels, messages, send |
+| drives | | USB sticks and disks: mount, eject, plug notices |
+| home-assistant | | Home Assistant states and controls |
+| media | front | Everything playing, search and play across providers |
+| mpris | provider: media | Any MPRIS player |
+| notifications | | Notification history: what you missed |
+| notion | | Notion search, pages, databases, writes |
+| phone | | KDE Connect: ring, battery, SMS, share |
+| power | | Battery, power profile, brightness, suspend |
+| radio | provider: media | Live radio (radio-browser.info) |
+| slack | | The user's Slack through their own app token |
+| spotify | provider: media | Spotify catalog search and play |
+| system | | Load, processes, ports, errors, image updates |
+| timers | | Timers and alarms on the island |
+| vpn | | NetworkManager VPNs |
+
+The mail front and its IMAP provider ship with Samantha itself.
 
 ## The registry
 

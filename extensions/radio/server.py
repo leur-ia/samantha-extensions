@@ -51,13 +51,15 @@ def api(path, params=None):
 
 
 def station(s):
-    return {"id": s.get("stationuuid", ""), "name": (s.get("name") or "").strip(),
+    return {"id": s.get("stationuuid", ""), "kind": "station", "name": (s.get("name") or "").strip(),
             "country": s.get("countrycode", ""), "tags": s.get("tags", "")[:80],
             "codec": s.get("codec", ""), "bitrate": s.get("bitrate", 0),
             "url": s.get("url_resolved") or s.get("url", "")}
 
 
 def search(args):
+    if args.get("kind") not in (None, "", "station"):
+        return {"results": []}  # tracks and albums aren't radio's
     params = {"limit": max(1, min(20, int(args.get("limit") or 8))), "hidebroken": "true",
               "order": "clickcount", "reverse": "true"}
     if args.get("query"):
@@ -68,7 +70,7 @@ def search(args):
         params["tag"] = str(args["tag"]).strip().lower()
     if len(params) == 4:
         raise Failure("Donne un nom de radio, un pays (code FR, BE…) ou un genre (jazz, news…)")
-    return {"stations": [station(s) for s in api("stations/search", params)]}
+    return {"results": [station(s) for s in api("stations/search", params)]}
 
 
 def daemon_publish(data):
@@ -117,7 +119,7 @@ def play(args):
             raise Failure("Station introuvable")
         s = station(found[0])
     elif args.get("query"):
-        found = search({"query": args["query"], "limit": 1})["stations"]
+        found = search({"query": args["query"], "limit": 1})["results"]
         if not found:
             raise Failure(f"Aucune radio « {args['query']} »")
         s = found[0]
@@ -159,6 +161,19 @@ def now(args):
             "country": (s or {}).get("country", "")}
 
 
+def players(args):
+    """The radio as a player, for the media capability."""
+    n = now({})
+    return {"players": [{"player": "radio", "name": "Radio", "state": "playing" if n["playing"] else "stopped",
+                         "title": n["station"], "artists": "", "album": ""}]}
+
+
+def control(args):
+    if args.get("action") not in ("stop", "pause", "toggle"):
+        raise Failure("La radio sait seulement s'arrêter (stop); pour la relancer, radio.play")
+    return {"done": "stop", "player": "radio", **stop({})}
+
+
 # --- MCP ---------------------------------------------------------------------------
 
 S, I = {"type": "string"}, {"type": "integer"}
@@ -168,14 +183,23 @@ TOOLS = {
                        "genre tag (jazz, news, classical…), most listened first; limit 1-20.",
         "inputSchema": {"type": "object", "properties": {
             "query": S, "country": S, "tag": S, "limit": I}},
-        "outputSchema": {"type": "object", "properties": {"stations": {"type": "array", "items": {
-            "type": "object", "properties": {"id": S, "name": S, "country": S, "tags": S,
+        "outputSchema": {"type": "object", "properties": {"results": {"type": "array", "items": {
+            "type": "object", "properties": {"id": S, "kind": S, "name": S, "country": S, "tags": S,
                                              "codec": S, "bitrate": I, "url": S}}}}},
     }),
     "play": (play, {
         "description": "Play a station: id from radio.search, or a name (the most listened "
                        "match). Replaces what the radio was playing.",
         "inputSchema": {"type": "object", "properties": {"id": S, "query": S}},
+    }),
+    "players": (players, {
+        "description": "The radio as a media player: playing or stopped, and which station.",
+        "inputSchema": {"type": "object", "properties": {}},
+    }),
+    "control": (control, {
+        "description": "Stop the radio (action stop, pause or toggle).",
+        "inputSchema": {"type": "object", "required": ["action"], "properties": {
+            "action": {"type": "string"}, "player": S}},
     }),
     "stop": (stop, {
         "description": "Stop the radio.",

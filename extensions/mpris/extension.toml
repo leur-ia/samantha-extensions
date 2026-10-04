@@ -1,0 +1,36 @@
+id = "mpris"
+name = "MPRIS players"
+version = "0.1.0"
+description = "Media provider for every MPRIS player on the desktop (Spotify, browsers, YouTube Music, VLC…): players, control, volume."
+
+# Stdlib-only Python driving MPRIS players on the session bus with `busctl --user`.
+[[mcp]]
+name = "mpris"
+command = "python3"
+args = ["server.py"]
+
+# A media provider: the model reaches these through media.* (the front).
+[[provides]]
+capability = "media"
+server = "mpris"
+methods = ["players", "control", "volume"]
+
+[needs]
+dbus_session = true
+
+[tools."mpris.players"]
+class = "read"
+data = "desktop"
+
+[tools."mpris.now_playing"]
+class = "read"
+data = "desktop"
+
+# Undone with the opposite action.
+[tools."mpris.control"]
+class = "reversible"
+data = "desktop"
+
+[tools."mpris.volume"]
+class = "reversible"
+data = "desktop"

@@ -1,0 +1,44 @@
+id = "caldav"
+name = "CalDAV calendars"
+version = "0.1.0"
+description = "Calendar provider for CalDAV accounts (Infomaniak, Zoho, Fastmail, Nextcloud…) and iCal feeds: the calendar capability's methods; reminders before events."
+
+# Stdlib-only Python. Accounts in ~/.config/samantha/calendar.toml; each password or
+# secret feed address is the Secret Service item calendar-<account>
+# (`samantha provider set-key calendar-<account>`), asked of the daemon at use.
+[[mcp]]
+name = "caldav"
+command = "python3"
+args = ["server.py"]
+
+# A calendar provider: the model reaches these tools through calendar.* (the front).
+[[provides]]
+capability = "calendar"
+server = "caldav"
+
+[needs]
+network = true
+read = ["~/.config/samantha/calendar.toml"]
+secrets = ["calendar-*"]
+
+# 10 minutes before an event: an island activity and an event for watchers.
+[[event]]
+type = "caldav.activity"
+data_class = "personal"
+
+[[event]]
+type = "calendar.soon"
+data_class = "personal"
+
+[tools."caldav.events"]
+class = "read"
+data = "personal"
+
+[tools."caldav.calendars"]
+class = "read"
+data = "personal"
+
+# Writes to the user's calendar, seen by everyone it is shared with.
+[tools."caldav.create"]
+class = "confirm"
+data = "personal"

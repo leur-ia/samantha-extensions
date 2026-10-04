@@ -368,7 +368,7 @@ def gather(start, end, only=None):
 
 def show(e):
     local = lambda t: as_dt(t).astimezone()
-    return {"title": e["title"], "calendar": e["calendar"], "all_day": e["all_day"],
+    return {"title": e["title"], "calendar": e["calendar"], "account": e["account"], "all_day": e["all_day"],
             "start": local(e["start"]).strftime("%Y-%m-%d") if e["all_day"] else local(e["start"]).strftime("%Y-%m-%d %H:%M"),
             "end": local(e["end"]).strftime("%Y-%m-%d %H:%M"), "day": day_name(local(e["start"])),
             "location": e["location"], "description": e["description"]}
@@ -471,7 +471,7 @@ def remind_once():
         _announced.add(key)
         when = as_dt(e["start"]).astimezone().strftime("%H:%M")
         text = (f"À {when} · " if FRENCH else f"At {when} · ") + e["title"]
-        publish("calendar.activity", {"key": key[:120], "text": text, "sub": e["location"],
+        publish("caldav.activity", {"key": key[:120], "text": text, "sub": e["location"],
                                       "icon": "mark", "ttl_s": max(60, int(lead * 60))})
         publish("calendar.soon", {"title": e["title"], "start": when, "location": e["location"],
                                   "calendar": e["calendar"]})
