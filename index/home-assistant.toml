@@ -1,0 +1,7 @@
+description = "The user's Home Assistant: states of lights, sensors, climate…; everyday controls; other services confirmed."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/home-assistant"
+commit = "51752e96cd0937a4ea6eeb64ae2a84b85ffa5fb9"

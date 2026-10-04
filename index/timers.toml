@@ -1,0 +1,7 @@
+description = "Timers, alarms and pomodoros: shown on the island, ringing at the end, kept across restarts."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/timers"
+commit = "51752e96cd0937a4ea6eeb64ae2a84b85ffa5fb9"

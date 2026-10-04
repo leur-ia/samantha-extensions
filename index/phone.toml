@@ -1,0 +1,7 @@
+description = "The user's phone through KDE Connect: ring it, battery, its notifications, send an SMS, share a file or link."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/phone"
+commit = "51752e96cd0937a4ea6eeb64ae2a84b85ffa5fb9"

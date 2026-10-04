@@ -1,0 +1,7 @@
+description = "Discord through the user's own bot (official API): servers, channels, recent messages, send and react."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/discord"
+commit = "51752e96cd0937a4ea6eeb64ae2a84b85ffa5fb9"

@@ -1,0 +1,7 @@
+description = "The user's calendars (CalDAV: Infomaniak, Zoho, Fastmail, Nextcloud…; iCal feeds like Google's): agenda, search, add events, reminders before meetings."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/calendar"
+commit = "51752e96cd0937a4ea6eeb64ae2a84b85ffa5fb9"
