@@ -5,3 +5,9 @@ version = "0.1.0"
 source = "https://github.com/leur-ia/samantha-extensions.git"
 path = "extensions/radio"
 commit = "51752e96cd0937a4ea6eeb64ae2a84b85ffa5fb9"
+
+[[release]]
+version = "0.2.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/radio"
+commit = "72a2923ce0e030e70294b7d6519b7dc511152324"
