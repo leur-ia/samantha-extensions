@@ -1,0 +1,7 @@
+description = "The user's address book across providers (Google…): find someone's address or phone number."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/contacts"
+commit = "43365a82aff874898186f669364d22f73ccb94ea"
