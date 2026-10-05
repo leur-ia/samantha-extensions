@@ -1,0 +1,148 @@
+{
+  "methods": [
+    {
+      "name": "inbox",
+      "description": "Notifications and to-dos from every forge (mentions, review requests, CI failures, assigned issues), newest first: {items: [{id, kind, title, repo, reason?, author?, updated, url, unread?}], errors?}.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "items",
+        "sort": "updated",
+        "descending": true
+      },
+      "route": [],
+      "ids": [
+        "id",
+        "repo"
+      ]
+    },
+    {
+      "name": "reviews",
+      "description": "Pull/merge requests waiting for the user's review, newest first: {items: [{id, kind, title, repo, reason?, author?, updated, url, unread?}], errors?}.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "items",
+        "sort": "updated",
+        "descending": true
+      },
+      "route": [],
+      "ids": [
+        "id",
+        "repo"
+      ]
+    },
+    {
+      "name": "mine",
+      "description": "The user's own open pull/merge requests, newest first: {items: [{id, kind, title, repo, reason?, author?, updated, url, unread?}], errors?}.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "items",
+        "sort": "updated",
+        "descending": true
+      },
+      "route": [],
+      "ids": [
+        "id",
+        "repo"
+      ]
+    },
+    {
+      "name": "repos",
+      "description": "The user's repositories, most recently active first: {repos: [{repo, description, updated, url, private}]}.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "repos",
+        "sort": "updated",
+        "descending": true
+      },
+      "route": [],
+      "ids": [
+        "repo"
+      ]
+    },
+    {
+      "name": "ci",
+      "description": "Latest CI runs of a repository (from code.repos: provider:owner/name): {runs: [{name, status, branch, updated, url}]}.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "repo"
+        ],
+        "properties": {
+          "repo": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "route": [
+        "repo"
+      ],
+      "ids": [
+        "repo"
+      ]
+    },
+    {
+      "name": "mark_read",
+      "description": "Mark a notification or to-do from code.inbox as read/done.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          }
+        }
+      },
+      "class": "reversible",
+      "data": "personal",
+      "route": [
+        "id"
+      ],
+      "ids": [
+        "id"
+      ]
+    }
+  ]
+}

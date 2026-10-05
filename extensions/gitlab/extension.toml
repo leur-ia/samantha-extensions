@@ -1,0 +1,20 @@
+id = "gitlab"
+name = "GitLab"
+version = "0.1.0"
+description = "Code provider for GitLab (gitlab.com or your own host): to-dos, reviews waiting, your merge requests, projects, pipelines (your own token)."
+
+# Stdlib-only Python on the REST API. Token: `samantha provider set-key gitlab`.
+[[mcp]]
+name = "gitlab"
+command = "python3"
+args = ["server.py"]
+secrets = { GITLAB_TOKEN = "secret:gitlab" }
+
+[[provides]]
+capability = "code"
+server = "gitlab"
+
+[needs]
+network = true
+read = ["~/.config/samantha/gitlab.toml"]
+secrets = ["gitlab"]

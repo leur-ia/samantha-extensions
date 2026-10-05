@@ -1,0 +1,145 @@
+{
+  "methods": [
+    {
+      "name": "places",
+      "description": "The user's storages across providers: {places: [{place, name, kind}]}.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "places"
+      },
+      "route": [],
+      "ids": [
+        "place"
+      ]
+    },
+    {
+      "name": "list",
+      "description": "A folder's contents: {entries: [{name, path, dir, size, modified}]}.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "place"
+        ],
+        "properties": {
+          "place": {
+            "type": "string",
+            "description": "A storage from files.places (provider:name, e.g. rclone:gdrive)."
+          },
+          "path": {
+            "type": "string"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "route": [
+        "place"
+      ],
+      "ids": [
+        "place"
+      ]
+    },
+    {
+      "name": "search",
+      "description": "Files whose name contains the words, in one storage or every one: {results: [{place, path, size, modified}], errors?}.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "place": {
+            "type": "string",
+            "description": "A storage from files.places (provider:name, e.g. rclone:gdrive)."
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "results",
+        "sort": "modified",
+        "descending": true
+      },
+      "route": [
+        "place"
+      ],
+      "ids": [
+        "place"
+      ]
+    },
+    {
+      "name": "download",
+      "description": "Copy a file to the user's Downloads folder; returns its local path.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "place",
+          "path"
+        ],
+        "properties": {
+          "place": {
+            "type": "string",
+            "description": "A storage from files.places (provider:name, e.g. rclone:gdrive)."
+          },
+          "path": {
+            "type": "string"
+          }
+        }
+      },
+      "class": "reversible",
+      "data": "personal",
+      "route": [
+        "place"
+      ],
+      "ids": [
+        "place"
+      ]
+    },
+    {
+      "name": "upload",
+      "description": "Send a local file (absolute path) into a storage folder.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "place",
+          "file"
+        ],
+        "properties": {
+          "place": {
+            "type": "string",
+            "description": "A storage from files.places (provider:name, e.g. rclone:gdrive)."
+          },
+          "file": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        }
+      },
+      "class": "confirm",
+      "data": "personal",
+      "route": [
+        "place"
+      ],
+      "ids": [
+        "place"
+      ]
+    }
+  ]
+}

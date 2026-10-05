@@ -23,12 +23,18 @@ implements them. Adding a service to a domain is writing a provider.
 |---|---|---|
 | audio | | Speakers, headphones, volume, mute, Bluetooth audio |
 | calendar | front | One agenda across calendar providers |
+| clipboard | | Clipboard history (passwords never kept) |
+| code | front | GitHub/GitLab inbox, reviews, PRs/MRs, CI |
 | contacts | front | One address book across providers |
+| backup | | restic backups: back up, snapshots, restore |
 | caldav | provider: calendar | CalDAV accounts and iCal feeds, meeting links, reminders |
 | discord | | The user's own bot: servers, channels, messages, send |
 | duffel | provider: flights | Flight offers from 300+ airlines (search only) |
 | drives | | USB sticks and disks: mount, eject, plug notices |
+| files | front | Cloud storage: browse, search, download, upload |
 | flights | front | Find and compare flights, a link to book |
+| github | provider: code | GitHub notifications, reviews, Actions |
+| gitlab | provider: code | GitLab to-dos, reviews, pipelines |
 | google | provider: mail, calendar, contacts | Gmail, Google Calendar (Meet links, reminders), Google Contacts |
 | google-places | provider: restaurants | Google ratings, hours, reviews, reservations |
 | home-assistant | | Home Assistant states and controls |
@@ -43,6 +49,7 @@ implements them. Adding a service to a domain is writing a provider.
 | phone | | KDE Connect: ring, battery, SMS, share |
 | power | | Battery, power profile, brightness, suspend |
 | radio | provider: media | Live radio (radio-browser.info) |
+| rclone | provider: files | Every rclone remote (Drive, Dropbox, OneDrive…) |
 | restaurants | front | Find a restaurant, details, how to book |
 | slack | | The user's Slack through their own app token |
 | spotify | provider: media | Spotify catalog search and play |

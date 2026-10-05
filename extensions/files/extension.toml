@@ -1,0 +1,7 @@
+id = "files"
+name = "Files"
+version = "0.1.0"
+description = "Your cloud storage in one place (Google Drive, Dropbox, OneDrive, kDrive… through providers like rclone): browse, search, download, upload."
+
+# The files front: Samantha's daemon serves it from every provider of `files`.
+capability = "capability.json"

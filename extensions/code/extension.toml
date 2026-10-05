@@ -1,0 +1,7 @@
+id = "code"
+name = "Code"
+version = "0.1.0"
+description = "Your code forges in one place (GitHub, GitLab…): notifications, reviews waiting for you, your open pull/merge requests, repositories, CI status."
+
+# The code front: Samantha's daemon serves it from every provider of `code`.
+capability = "capability.json"

@@ -1,0 +1,21 @@
+id = "rclone"
+name = "rclone"
+version = "0.1.0"
+description = "Files provider for every rclone remote (Google Drive, Dropbox, OneDrive, kDrive/WebDAV, S3…): browse, search, download, upload."
+
+# Stdlib-only Python driving rclone (in the image). Remotes are added once with
+# `rclone config` (its own sign-in per service). Reads home files (uploads), writes
+# rclone's config (token refresh) and ~/Downloads.
+[[mcp]]
+name = "rclone"
+command = "python3"
+args = ["server.py"]
+
+[[provides]]
+capability = "files"
+server = "rclone"
+
+[needs]
+network = true
+read = ["~"]
+write = ["~/.config/rclone", "~/Downloads"]

@@ -1,0 +1,54 @@
+id = "backup"
+name = "Backup"
+version = "0.1.0"
+description = "Backups with restic: back up your folders to a disk or a server, list snapshots, browse and restore files (never over the originals)."
+
+# Stdlib-only Python with restic (in the image). Settings in
+# ~/.config/samantha/backup.toml; repository password: `samantha provider set-key
+# backup-restic`. Reads the home folder (what it backs up); writes only to removable
+# disks (a local repository), restic's cache and ~/Restauré (restores).
+[[mcp]]
+name = "backup"
+command = "python3"
+args = ["server.py"]
+secrets = { RESTIC_PASSWORD = "secret:backup-restic" }
+
+[needs]
+network = true
+read = ["~"]
+write = ["/run/media", "~/.cache/restic", "~/Restauré"]
+secrets = ["backup-restic"]
+
+[[event]]
+type = "backup.activity"
+data_class = "desktop"
+
+[[event]]
+type = "backup.done"
+data_class = "desktop"
+
+[tools."backup.status"]
+class = "read"
+data = "personal"
+
+[tools."backup.snapshots"]
+class = "read"
+data = "personal"
+
+[tools."backup.files"]
+class = "read"
+data = "personal"
+
+# Adds a snapshot; nothing of the user's changes.
+[tools."backup.backup"]
+class = "reversible"
+data = "personal"
+
+# Writes files (into ~/Restauré, a new folder each time).
+[tools."backup.restore"]
+class = "confirm"
+data = "personal"
+
+[tools."backup.init"]
+class = "confirm"
+data = "personal"
