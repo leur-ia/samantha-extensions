@@ -99,6 +99,10 @@ REPORT = MULTI.format(
     "END:VEVENT\nEND:VCALENDAR\n</c:calendar-data></d:prop></d:propstat></d:response>")
 
 
+EVENT_A = ("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:a\r\nSUMMARY:Réunion\r\n"
+           "DTSTART:20261006T080000Z\r\nDURATION:PT45M\r\nLOCATION:Salle\r\n  2\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n")
+
+
 class Server:
     def __init__(self):
         self.requests = []
@@ -108,9 +112,12 @@ class Server:
         self.requests.append(req)
         path = req.full_url.removeprefix("https://dav.example")
         body = {("PROPFIND", "/.well-known/caldav"): PRINCIPAL, ("PROPFIND", "/principals/me/"): HOME,
-                ("PROPFIND", "/calendars/me/"): CALS, ("REPORT", "/calendars/me/perso/"): REPORT}.get((req.get_method(), path), "")
+                ("PROPFIND", "/calendars/me/"): CALS, ("REPORT", "/calendars/me/perso/"): REPORT,
+                ("GET", "/calendars/me/perso/a.ics"): EVENT_A,
+                ("GET", "/calendars/me/perso/series.ics"): FEED}.get((req.get_method(), path), "")
         r = io.BytesIO(body.encode())
         r.geturl = lambda: req.full_url
+        r.headers = {"ETag": '"v1"'}
         return r
 
 
@@ -151,6 +158,38 @@ class CalDav(unittest.TestCase):
         self.assertTrue(put.full_url.startswith("https://dav.example/calendars/me/perso/"))
         self.assertIn(b"SUMMARY:D\xc3\xaener\\; chez Ana", put.data)
         self.assertTrue(call("create", {"title": "x", "start": "demain"})["isError"])
+        n = len(self.srv.requests)
+        r = call("create", {"title": "design", "start": "2026-10-10 14:00", "attendees": ["fred@corp.com"]})
+        self.assertIn("Google ou Microsoft", r["content"][0]["text"])
+        self.assertEqual(len(self.srv.requests), n, "nothing written")
+
+    def test_update_and_delete_by_id(self):
+        ev = call("events", {"date": "2026-10-06"})["structuredContent"]["events"][0]
+        self.assertEqual(ev["id"], "ik/calendars/me/perso/a.ics")
+        r = call("update", {"id": ev["id"], "event": "réunion", "start": "2026-10-06 14:00", "location": ""})
+        self.assertFalse(r["isError"], r)
+        put = self.srv.requests[-1]
+        self.assertEqual((put.get_method(), put.full_url, put.get_header("If-match")),
+                         ("PUT", "https://dav.example/calendars/me/perso/a.ics", '"v1"'))
+        text = put.data.decode()
+        start = datetime.datetime(2026, 10, 6, 14, 0).astimezone().astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
+        end = (datetime.datetime(2026, 10, 6, 14, 45).astimezone().astimezone(UTC)).strftime("%Y%m%dT%H%M%SZ")
+        self.assertIn(f"DTSTART:{start}\r\n", text)
+        self.assertIn(f"DTEND:{end}\r\n", text, "45 minutes kept")
+        self.assertNotIn("DURATION", text)
+        self.assertNotIn("LOCATION", text, "an empty location removes it")
+        self.assertIn("SUMMARY:Réunion\r\nDTSTART", text)
+        self.assertTrue(text.startswith("BEGIN:VCALENDAR\r\nVERSION:2.0\r\n") and text.endswith("END:VCALENDAR\r\n"))
+        r = call("delete", {"id": ev["id"], "event": "Réunion"})["structuredContent"]
+        self.assertEqual((r["deleted"], self.srv.requests[-1].get_method()), ("Réunion", "DELETE"))
+        self.assertEqual(self.srv.requests[-1].get_header("If-match"), '"v1"')
+        n = len(self.srv.requests)
+        wrong = call("delete", {"id": ev["id"], "event": "Dentiste"})
+        self.assertIn("« Réunion »", wrong["content"][0]["text"])
+        self.assertIn("récurrent", call("delete", {"id": "ik/calendars/me/perso/series.ics", "event": "x"})["content"][0]["text"])
+        for bad in ("ik/../etc/passwd", "nope/calendars/me/perso/a.ics", "ik/a.ics?x=1"):
+            self.assertTrue(call("delete", {"id": bad, "event": "Réunion"})["isError"], bad)
+        self.assertEqual([r.get_method() for r in self.srv.requests[n:]], ["GET", "GET"], "nothing written")
 
     def test_reminder_once_per_event(self):
         published = []
@@ -170,7 +209,7 @@ class CalDav(unittest.TestCase):
 
     def test_protocol(self):
         tools = server.handle({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})["result"]["tools"]
-        self.assertEqual([t["name"] for t in tools], ["events", "calendars", "create"])
+        self.assertEqual([t["name"] for t in tools], ["events", "calendars", "create", "update", "delete"])
 
 
 if __name__ == "__main__":

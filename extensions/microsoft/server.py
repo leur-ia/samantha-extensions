@@ -242,6 +242,19 @@ def mail_mark_read(args):
     return {"id": f"{account}/{native}", "read": args.get("read", True) is not False}
 
 
+EMAIL = re.compile(r"[^@\s,<>]+@[^@\s,<>]+\.[^@\s,<>]+")
+
+
+def emails(value):
+    """A list of addresses (or one comma-separated string), each checked."""
+    items = value.split(",") if isinstance(value, str) else list(value or [])
+    out = [str(e).strip() for e in items if str(e).strip()]
+    bad = [e for e in out if not EMAIL.fullmatch(e)]
+    if bad:
+        raise Failure(f"Adresse invalide: {', '.join(bad)} (cherche-la avec contacts.search)")
+    return out
+
+
 def recipients(to):
     out = []
     for part in str(to or "").split(","):
@@ -326,7 +339,7 @@ def calendar_events(args):
     last = first + datetime.timedelta(days=days)
     q = {"startDateTime": first.isoformat(), "endDateTime": last.isoformat(),
          "$orderby": "start/dateTime", "$top": 100,
-         "$select": "subject,start,end,isAllDay,location,bodyPreview,isCancelled,onlineMeeting,onlineMeetingProvider"}
+         "$select": "id,subject,start,end,isAllDay,location,bodyPreview,isCancelled,onlineMeeting,onlineMeetingProvider"}
     search = str(args.get("search") or "").lower()
     events, errors = [], []
     for account in chosen(args):
@@ -341,7 +354,7 @@ def calendar_events(args):
                 continue
             start = datetime.datetime.fromisoformat(e["start"]["dateTime"][:19])
             end = datetime.datetime.fromisoformat(e["end"]["dateTime"][:19])
-            ev = {"title": e.get("subject") or "", "calendar": "Outlook", "account": account,
+            ev = {"id": f"{account}/{e.get('id', '')}", "title": e.get("subject") or "", "calendar": "Outlook", "account": account,
                   "all_day": bool(e.get("isAllDay")),
                   "start": start.strftime("%Y-%m-%d") if e.get("isAllDay") else start.strftime("%Y-%m-%d %H:%M"),
                   "end": end.strftime("%Y-%m-%d %H:%M"), "day": day_name(start),
@@ -399,8 +412,110 @@ def calendar_create(args):
              "end": {"dateTime": (start + datetime.timedelta(minutes=minutes)).isoformat(), "timeZone": zone}}
     if args.get("location"):
         event["location"] = {"displayName": str(args["location"])}
-    graph(account, "POST", path, event)
-    return {"created": title, "account": account, "start": start.strftime("%Y-%m-%d %H:%M"), "minutes": minutes}
+    # Outlook sends the invitations itself when an event has attendees.
+    guests = emails(args.get("attendees"))
+    if guests:
+        event["attendees"] = [{"emailAddress": {"address": e}, "type": "required"} for e in guests]
+    if args.get("meet"):
+        event["isOnlineMeeting"] = True
+    made = graph(account, "POST", path, event)
+    out = {"created": title, "account": account, "start": start.strftime("%Y-%m-%d %H:%M"), "minutes": minutes}
+    if guests:
+        out["attendees"] = guests
+    join = (made.get("onlineMeeting") or {}).get("joinUrl")
+    if join:
+        out["meeting_url"] = join
+    return out
+
+
+def calendar_busy(args):
+    """Other people's busy periods (getSchedule: people in the same Microsoft 365 organization)."""
+    people = emails(args.get("emails"))
+    if not people:
+        raise Failure("emails: les adresses des personnes")
+    days = max(1, min(14, int(args.get("days") or 1)))
+    try:
+        first = (datetime.datetime.strptime(str(args["date"]), "%Y-%m-%d") if args.get("date")
+                 else datetime.datetime.now()).replace(hour=0, minute=0, second=0, microsecond=0)
+    except ValueError:
+        raise Failure("date: AAAA-MM-JJ")
+    zone = local_zone()
+    rows, errors = [], []
+    for account in chosen(args):
+        try:
+            got = graph(account, "POST", "/me/calendar/getSchedule", {
+                "schedules": people, "availabilityViewInterval": 30,
+                "startTime": {"dateTime": first.isoformat(), "timeZone": zone},
+                "endTime": {"dateTime": (first + datetime.timedelta(days=days)).isoformat(), "timeZone": zone}},
+                headers={"Prefer": f'outlook.timezone="{zone}"'}).get("value", [])
+        except Failure as e:
+            errors.append(f"{account}: {e}")
+            continue
+        answered = {str(v.get("scheduleId", "")).lower(): v for v in got}
+        for e in people:
+            v = answered.get(e.lower())
+            if not v or v.get("error"):
+                reason = ((v or {}).get("error") or {}).get("responseCode") or "notFound"
+                rows.append({"email": e, "seen": False, "reason": f"{account}: {reason}"})
+                continue
+            rows.append({"email": e, "seen": True})
+            for item in v.get("scheduleItems") or []:
+                if item.get("status") in ("free", "workingElsewhere"):
+                    continue
+                start = datetime.datetime.fromisoformat(item["start"]["dateTime"][:19])
+                end = datetime.datetime.fromisoformat(item["end"]["dateTime"][:19])
+                rows.append({"email": e, "start": start.strftime("%Y-%m-%d %H:%M"), "end": end.strftime("%Y-%m-%d %H:%M")})
+    return {"busy": rows, **({"errors": errors} if errors else {})}
+
+
+def checked_event(args):
+    """The event behind args["id"], refused unless its title is args["event"]: the user
+    confirmed that title, so the id must not name another event."""
+    account, native = split_id(args.get("id"))
+    if account not in accounts():
+        raise Failure(f"Pas de compte Microsoft {account!r}")
+    path = f"/me/events/{urllib.parse.quote(native, safe='')}"
+    e = graph(account, "GET", path, query={"$select": "subject,start,end,isAllDay"},
+              headers={"Prefer": f'outlook.timezone="{local_zone()}"'})
+    title = e.get("subject") or ""
+    if title.strip().lower() != str(args.get("event") or "").strip().lower():
+        raise Failure(f"Cet id est l'évènement « {title} », pas « {args.get('event')} »: reprends l'id dans calendar.events")
+    return account, path, e
+
+
+def calendar_update(args):
+    account, path, e = checked_event(args)
+    patch = {}
+    if str(args.get("title") or "").strip():
+        patch["subject"] = str(args["title"]).strip()
+    if args.get("location") is not None:
+        patch["location"] = {"displayName": str(args["location"])}
+    if args.get("start") or args.get("minutes"):
+        # ponytail: all-day events aren't moved here; add date-only starts if asked for.
+        if e.get("isAllDay"):
+            raise Failure("Évènement sur la journée entière: je ne sais changer que les heures")
+        old_start = datetime.datetime.fromisoformat(e["start"]["dateTime"][:19])
+        old_end = datetime.datetime.fromisoformat(e["end"]["dateTime"][:19])
+        try:
+            start = datetime.datetime.strptime(str(args["start"]), "%Y-%m-%d %H:%M") if args.get("start") else old_start
+        except ValueError:
+            raise Failure("start: AAAA-MM-JJ HH:MM (heure locale)")
+        length = (datetime.timedelta(minutes=max(5, min(24 * 60, int(args["minutes"])))) if args.get("minutes")
+                  else old_end - old_start)
+        zone = local_zone()
+        patch["start"] = {"dateTime": start.isoformat(), "timeZone": zone}
+        patch["end"] = {"dateTime": (start + length).isoformat(), "timeZone": zone}
+    if not patch:
+        raise Failure("Rien à changer: donne title, start, minutes ou location")
+    graph(account, "PATCH", path, patch)
+    return {"updated": patch.get("subject", e.get("subject") or ""), "id": args["id"], "account": account,
+            **({"start": patch["start"]["dateTime"][:16].replace("T", " ")} if "start" in patch else {})}
+
+
+def calendar_delete(args):
+    account, path, e = checked_event(args)
+    graph(account, "DELETE", path)
+    return {"deleted": e.get("subject") or "", "account": account}
 
 
 # --- MCP ---------------------------------------------------------------------------
@@ -428,7 +543,16 @@ CALENDAR = {
                   {"type": "object", "properties": {}}),
     "create": (calendar_create, "Add an Outlook event.",
                {"type": "object", "required": ["title", "start"], "properties": {
-                   "title": S, "start": S, "minutes": I, "location": S, "account": S, "calendar": S}}),
+                   "title": S, "start": S, "minutes": I, "location": S, "account": S, "calendar": S,
+                   "attendees": {"type": "array", "items": S}, "meet": B}}),
+    "busy": (calendar_busy, "Other people's busy periods (Outlook getSchedule).",
+             {"type": "object", "required": ["emails"], "properties": {
+                 "emails": {"type": "array", "items": S}, "date": S, "days": I, "account": S}}),
+    "update": (calendar_update, "Change an Outlook event (one occurrence of a series).",
+               {"type": "object", "required": ["id", "event"], "properties": {
+                   "id": S, "event": S, "title": S, "start": S, "minutes": I, "location": S}}),
+    "delete": (calendar_delete, "Delete an Outlook event (one occurrence of a series).",
+               {"type": "object", "required": ["id", "event"], "properties": {"id": S, "event": S}}),
 }
 TOOLS = MAIL  # main() picks the role's set
 
@@ -452,7 +576,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-microsoft", "version": "0.1.0"}}
+                  "serverInfo": {"name": "samantha-microsoft", "version": "0.2.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

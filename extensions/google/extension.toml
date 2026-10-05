@@ -1,6 +1,6 @@
 id = "google"
 name = "Google"
-version = "0.1.0"
+version = "0.2.0"
 description = "Mail, calendar and contacts provider for Google accounts: Gmail, Google Calendar (Meet links, reminders), Google Contacts."
 
 # Stdlib-only Python on Google's APIs. Sign-in is Samantha's: your own OAuth client
@@ -42,6 +42,9 @@ scopes = [
   "https://www.googleapis.com/auth/calendar",
   "https://www.googleapis.com/auth/contacts.readonly",
   "https://www.googleapis.com/auth/contacts.other.readonly",
+  # Colleagues in a Workspace company directory (contacts.search); skipped for
+  # accounts signed in before it was asked: `samantha account add google` again.
+  "https://www.googleapis.com/auth/directory.readonly",
 ]
 
 # 10 minutes before an event: an island activity, and calendar.soon for watchers.

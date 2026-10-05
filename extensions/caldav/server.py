@@ -134,10 +134,12 @@ def request(account, method, url, body=None, headers=None, depth=None):
     req = urllib.request.Request(url, data=body.encode() if body else None, method=method, headers=h)
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
-            return r.read().decode("utf-8", "replace"), r.geturl()
+            return r.read().decode("utf-8", "replace"), r.geturl(), r.headers.get("ETag")
     except urllib.error.HTTPError as e:
         if e.code == 401:
             raise Failure(f"{account['name']}: identifiants refusés (calendar-{account['name']})")
+        if e.code == 412 and "If-Match" in h:
+            raise Failure("L'évènement a changé entre-temps: relis l'agenda et recommence")
         if e.code == 412:
             raise Failure("Un évènement avec cet identifiant existe déjà")
         raise Failure(f"{account['name']}: le serveur a refusé la requête ({e.code})")
@@ -152,7 +154,7 @@ def href(base, h):
 def propfind(account, url, props, depth):
     body = ('<?xml version="1.0"?><d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">'
             f"<d:prop>{props}</d:prop></d:propfind>")
-    text, final = request(account, "PROPFIND", url, body, depth=depth)
+    text, final, _ = request(account, "PROPFIND", url, body, depth=depth)
     try:
         return ET.fromstring(text), final
     except ET.ParseError:
@@ -193,14 +195,19 @@ def caldav_events(account, start, end):
             "</c:calendar-query>")
     events = []
     for url, cal in discover(account):
-        text, _ = request(account, "REPORT", url, body, depth=1)
+        text, *_ = request(account, "REPORT", url, body, depth=1)
         try:
             root = ET.fromstring(text)
         except ET.ParseError:
             raise Failure(f"{account['name']}: réponse CalDAV illisible")
-        for data in root.iter("{urn:ietf:params:xml:ns:caldav}calendar-data"):
+        for resp in root.findall("d:response", NS):
+            data = resp.find(".//c:calendar-data", NS)
+            if data is None:
+                continue
+            # The resource's path, for calendar.update and calendar.delete.
+            path = urllib.parse.urlparse(href(url, resp.findtext("d:href", "", NS))).path.lstrip("/")
             for e in expand(parse_ics(data.text or ""), start, end):
-                events.append({**e, "calendar": cal, "account": account["name"]})
+                events.append({**e, "calendar": cal, "account": account["name"], "path": path})
     return events
 
 
@@ -368,7 +375,7 @@ def expand(events, start, end):
 
 
 def ics_events(account, start, end):
-    text, _ = request(account, "GET", secret(account))
+    text, *_ = request(account, "GET", secret(account))
     return [{**e, "calendar": account["name"], "account": account["name"]}
             for e in expand(parse_ics(text), start, end)]
 
@@ -390,7 +397,7 @@ def gather(start, end, only=None):
 
 def show(e):
     local = lambda t: as_dt(t).astimezone()
-    return {"title": e["title"], "calendar": e["calendar"], "account": e["account"], "all_day": e["all_day"],
+    return {"id": f"{e['account']}/{e['path']}" if e.get("path") else "", "title": e["title"], "calendar": e["calendar"], "account": e["account"], "all_day": e["all_day"],
             "start": local(e["start"]).strftime("%Y-%m-%d") if e["all_day"] else local(e["start"]).strftime("%Y-%m-%d %H:%M"),
             "end": local(e["end"]).strftime("%Y-%m-%d %H:%M"), "day": day_name(local(e["start"])),
             "location": e["location"], "description": e["description"],
@@ -446,6 +453,11 @@ def ics_text(v):
 
 
 def create(args):
+    # ponytail: CalDAV servers differ on sending invitations (iTIP/iMIP); invite from a
+    # Google or Microsoft account instead, until one server's way is worth supporting.
+    if args.get("attendees") or args.get("meet"):
+        raise Failure("Invitations et lien de visio: pas avec un calendrier CalDAV; "
+                      "crée la réunion dans un compte Google ou Microsoft (account)")
     title = str(args.get("title") or "").strip()
     if not title:
         raise Failure("Titre manquant")
@@ -474,6 +486,94 @@ def create(args):
     request(account, "PUT", href(url, f"{uid}.ics"), body,
             headers={"Content-Type": "text/calendar; charset=utf-8", "If-None-Match": "*"})
     return {"created": title, "calendar": cal, "start": start.strftime("%Y-%m-%d %H:%M"), "minutes": minutes}
+
+
+def resource(args):
+    """(account, url, ETag, iCalendar text, its event) behind args["id"], refused unless
+    the event's title is args["event"]: the user confirmed that title, so the id must
+    not name another event."""
+    name, _, path = str(args.get("id") or "").partition("/")
+    account = accounts().get(name)
+    if (not account or account["kind"] != "caldav" or not path or ".." in path.split("/")
+            or re.search(r"[?#\s]", path)):
+        raise Failure("id invalide: prends l'id renvoyé par calendar.events (les flux iCal sont en lecture seule)")
+    url = urllib.parse.urljoin(account["url"] + "/", "/" + path)
+    text, _, etag = request(account, "GET", url)
+    found = parse_ics(text)
+    # ponytail: a series isn't edited here (one occurrence needs an override or EXDATE);
+    # add when asked for.
+    if len(found) != 1 or "rrule" in found[0] or "rid" in found[0]:
+        raise Failure("Évènement récurrent: change-le dans ton agenda, je ne modifie que les évènements simples")
+    e = found[0]
+    if e.get("summary", "").strip().lower() != str(args.get("event") or "").strip().lower():
+        raise Failure(f"Cet id est l'évènement « {e.get('summary', '')} », pas « {args.get('event')} »: "
+                      "reprends l'id dans calendar.events")
+    return account, url, etag, text, e
+
+
+def edited(text, changes):
+    """`text` with the VEVENT's properties named in `changes` replaced by their line (an
+    empty line removes it); new ones are added; a new DTEND drops DURATION."""
+    out, done, inside = [], set(), False
+    for line in unfold(text):
+        name = re.split(r"[;:]", line, maxsplit=1)[0]
+        if line == "BEGIN:VEVENT":
+            inside = True
+        elif line == "END:VEVENT" and inside:
+            out += [v for k, v in changes.items() if k not in done and v]
+            inside = False
+        elif inside and (name in changes or (name == "DURATION" and "DTEND" in changes)):
+            if name in changes and name not in done and changes[name]:
+                out.append(changes[name])
+            done.add(name)
+            continue
+        out.append(line)
+    return "\r\n".join(out) + "\r\n"
+
+
+def write(account, method, url, etag, body=None):
+    headers = {"If-Match": etag} if etag else {}
+    if body is not None:
+        headers["Content-Type"] = "text/calendar; charset=utf-8"
+    request(account, method, url, body, headers=headers)
+
+
+def update(args):
+    account, url, etag, text, e = resource(args)
+    fmt = lambda t: t.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
+    changes = {}
+    if str(args.get("title") or "").strip():
+        changes["SUMMARY"] = f"SUMMARY:{ics_text(str(args['title']).strip())}"
+    if args.get("location") is not None:
+        changes["LOCATION"] = f"LOCATION:{ics_text(args['location'])}" if args["location"] else ""
+    if args.get("start") or args.get("minutes"):
+        # ponytail: all-day events aren't moved here; add date-only starts if asked for.
+        if not isinstance(e["start"], datetime.datetime):
+            raise Failure("Évènement sur la journée entière: je ne sais changer que les heures")
+        old_end = as_dt(e["end"]) if "end" in e else e["start"] + e.get("duration", datetime.timedelta(0))
+        try:
+            start = (datetime.datetime.strptime(str(args["start"]), "%Y-%m-%d %H:%M").astimezone()
+                     if args.get("start") else e["start"])
+        except ValueError:
+            raise Failure("start: AAAA-MM-JJ HH:MM (heure locale)")
+        length = (datetime.timedelta(minutes=max(5, min(24 * 60, int(args["minutes"])))) if args.get("minutes")
+                  else old_end - e["start"])
+        changes["DTSTART"] = f"DTSTART:{fmt(start)}"
+        changes["DTEND"] = f"DTEND:{fmt(start + length)}"
+    if not changes:
+        raise Failure("Rien à changer: donne title, start, minutes ou location")
+    changes["DTSTAMP"] = f"DTSTAMP:{fmt(now())}"
+    write(account, "PUT", url, etag, edited(text, changes))
+    out = {"updated": str(args.get("title") or "").strip() or e.get("summary", ""), "id": args["id"]}
+    if "DTSTART" in changes:
+        out["start"] = start.astimezone().strftime("%Y-%m-%d %H:%M")
+    return out
+
+
+def delete(args):
+    account, url, etag, _, e = resource(args)
+    write(account, "DELETE", url, etag)
+    return {"deleted": e.get("summary", ""), "id": args["id"]}
 
 
 # --- reminders ---------------------------------------------------------------------
@@ -536,6 +636,17 @@ TOOLS = {
         "inputSchema": {"type": "object", "required": ["title", "start"], "properties": {
             "title": S, "start": S, "minutes": I, "location": S, "account": S, "calendar": S}},
     }),
+    "update": (update, {
+        "description": "Change a CalDAV event (not a recurring one): new title, start (YYYY-MM-DD HH:MM "
+                       "local; the length is kept unless minutes is given), minutes or location. `event` "
+                       "is its current title, checked against the id.",
+        "inputSchema": {"type": "object", "required": ["id", "event"], "properties": {
+            "id": S, "event": S, "title": S, "start": S, "minutes": I, "location": S}},
+    }),
+    "delete": (delete, {
+        "description": "Delete a CalDAV event (not a recurring one). `event` is its title, checked against the id.",
+        "inputSchema": {"type": "object", "required": ["id", "event"], "properties": {"id": S, "event": S}},
+    }),
 }
 
 
@@ -558,7 +669,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-calendar", "version": "0.1.0"}}
+                  "serverInfo": {"name": "samantha-calendar", "version": "0.3.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

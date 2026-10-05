@@ -28,6 +28,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import uuid
 
 PROTOCOL = "2025-06-18"
 GMAIL = "https://gmail.googleapis.com/gmail/v1/users/me"
@@ -44,6 +45,10 @@ SETUP = ("Aucun compte Google: mets le client_id de ton app dans [oauth.google] 
 
 class Failure(Exception):
     """A message for the model: the call failed, say why."""
+
+
+class Denied(Failure):
+    """Google answered 401 or 403."""
 
 
 # --- daemon and Google APIs --------------------------------------------------------
@@ -70,11 +75,33 @@ def daemon(method, params, timeout=30):
     raise Failure("Le démon a fermé la connexion")
 
 
+DIRECTORY = "https://www.googleapis.com/auth/directory.readonly"
+
+
 def accounts():
     names = daemon("oauth.accounts", {"provider": "google"})["accounts"]
     if not names:
         raise Failure(SETUP)
     return names
+
+
+def granted(account, scope):
+    """Whether `account` granted `scope` at sign-in (older daemons don't say: assume so)."""
+    scopes = daemon("oauth.accounts", {"provider": "google"}).get("scopes")
+    return scopes is None or scope in scopes.get(account, [])
+
+
+EMAIL = re.compile(r"[^@\s,<>]+@[^@\s,<>]+\.[^@\s,<>]+")
+
+
+def emails(value):
+    """A list of addresses (or one comma-separated string), each checked."""
+    items = value.split(",") if isinstance(value, str) else list(value or [])
+    out = [str(e).strip() for e in items if str(e).strip()]
+    bad = [e for e in out if not EMAIL.fullmatch(e)]
+    if bad:
+        raise Failure(f"Adresse invalide: {', '.join(bad)} (cherche-la avec contacts.search)")
+    return out
 
 
 def api(account, method, url, body=None, query=None):
@@ -94,7 +121,7 @@ def api(account, method, url, body=None, query=None):
         except (ValueError, AttributeError, OSError):
             msg = ""
         if e.code in (401, 403):
-            raise Failure(f"Google refuse l'accès ({e.code}): API non activée dans ton projet Google Cloud, "
+            raise Denied(f"Google refuse l'accès ({e.code}): API non activée dans ton projet Google Cloud, "
                           f"ou consentement à renouveler (`samantha account add google`). {msg}".strip())
         if e.code == 404:
             raise Failure("Introuvable chez Google")
@@ -369,7 +396,7 @@ def events_between(account, first, last):
                 continue
             start, all_day = parse_when(e.get("start") or {})
             end, _ = parse_when(e.get("end") or {})
-            out.append({"id": e.get("id", ""), "title": e.get("summary") or "", "calendar": cal.get("summary", ""),
+            out.append({"id": f"{account}/{cal['id']}/{e.get('id', '')}", "title": e.get("summary") or "", "calendar": cal.get("summary", ""),
                         "account": account, "all_day": all_day,
                         "start": start.strftime("%Y-%m-%d") if all_day else start.strftime("%Y-%m-%d %H:%M"),
                         "end": end.strftime("%Y-%m-%d %H:%M"), "day": day_name(start),
@@ -396,7 +423,7 @@ def calendar_events(args):
     events = [e for e in events if not search or search in f"{e['title']} {e['location']} {e['description']}".lower()]
     events.sort(key=lambda e: e["_start"])
     for e in events:
-        del e["_start"], e["id"]
+        del e["_start"]
     return {"events": events, **({"errors": errors} if errors else {})}
 
 
@@ -436,8 +463,114 @@ def calendar_create(args):
              "end": {"dateTime": (start + datetime.timedelta(minutes=minutes)).isoformat(), "timeZone": zone}}
     if args.get("location"):
         event["location"] = str(args["location"])
-    api(account, "POST", f"{CALENDAR}/calendars/{cid}/events", event)
-    return {"created": title, "account": account, "start": start.strftime("%Y-%m-%d %H:%M"), "minutes": minutes}
+    guests = emails(args.get("attendees"))
+    if guests:
+        event["attendees"] = [{"email": e} for e in guests]
+    if args.get("meet"):
+        event["conferenceData"] = {"createRequest": {"requestId": uuid.uuid4().hex,
+                                                     "conferenceSolutionKey": {"type": "hangoutsMeet"}}}
+    # Google sends the invitations (sendUpdates=all); the Meet link needs conferenceDataVersion.
+    made = api(account, "POST", f"{CALENDAR}/calendars/{cid}/events", event,
+               query={"sendUpdates": "all" if guests else "none", "conferenceDataVersion": 1})
+    out = {"created": title, "account": account, "start": start.strftime("%Y-%m-%d %H:%M"), "minutes": minutes}
+    if guests:
+        out["attendees"] = guests
+    if made.get("hangoutLink"):
+        out["meeting_url"] = made["hangoutLink"]
+    return out
+
+
+def calendar_busy(args):
+    """Other people's busy periods (Google's free/busy: colleagues in the same Workspace)."""
+    people = emails(args.get("emails"))
+    if not people:
+        raise Failure("emails: les adresses des personnes")
+    days = max(1, min(14, int(args.get("days") or 1)))
+    try:
+        first = (datetime.datetime.strptime(str(args["date"]), "%Y-%m-%d") if args.get("date")
+                 else datetime.datetime.now()).replace(hour=0, minute=0, second=0, microsecond=0).astimezone()
+    except ValueError:
+        raise Failure("date: AAAA-MM-JJ")
+    rows, errors = [], []
+    for account in chosen(args):
+        try:
+            got = api(account, "POST", f"{CALENDAR}/freeBusy", {
+                "timeMin": first.isoformat(), "timeMax": (first + datetime.timedelta(days=days)).isoformat(),
+                "timeZone": local_zone(), "items": [{"id": e} for e in people]}).get("calendars", {})
+        except Failure as e:
+            errors.append(f"{account}: {e}")
+            continue
+        for e in people:
+            cal = got.get(e) or {}
+            if cal.get("errors") or e not in got:
+                reason = ((cal.get("errors") or [{}])[0]).get("reason", "notFound")
+                rows.append({"email": e, "seen": False, "reason": f"{account}: {reason}"})
+                continue
+            rows.append({"email": e, "seen": True})
+            for b in cal.get("busy", []):
+                start = datetime.datetime.fromisoformat(b["start"].replace("Z", "+00:00")).astimezone()
+                end = datetime.datetime.fromisoformat(b["end"].replace("Z", "+00:00")).astimezone()
+                rows.append({"email": e, "start": start.strftime("%Y-%m-%d %H:%M"), "end": end.strftime("%Y-%m-%d %H:%M")})
+    return {"busy": rows, **({"errors": errors} if errors else {})}
+
+
+def event_ref(value):
+    """(account, quoted calendar id, event id) of an id from calendar.events."""
+    account, _, rest = str(value or "").partition("/")
+    cal, _, eid = rest.rpartition("/")
+    if not re.fullmatch(r"[\w.@+#-]+", cal) or not cal.strip(".") or not re.fullmatch(r"\w+", eid):
+        raise Failure("id invalide: prends l'id renvoyé par calendar.events")
+    if account not in accounts():
+        raise Failure(f"Pas de compte Google {account!r}")
+    return account, urllib.parse.quote(cal, safe=""), eid
+
+
+def checked_event(args):
+    """The event behind args["id"], refused unless its title is args["event"]: the user
+    confirmed that title, so the id must not name another event."""
+    account, cal, eid = event_ref(args.get("id"))
+    url = f"{CALENDAR}/calendars/{cal}/events/{eid}"
+    e = api(account, "GET", url, query={"timeZone": local_zone()})
+    title = e.get("summary") or ""
+    if title.strip().lower() != str(args.get("event") or "").strip().lower():
+        raise Failure(f"Cet id est l'évènement « {title} », pas « {args.get('event')} »: reprends l'id dans calendar.events")
+    return account, url, e
+
+
+def calendar_update(args):
+    account, url, e = checked_event(args)
+    patch = {}
+    if str(args.get("title") or "").strip():
+        patch["summary"] = str(args["title"]).strip()
+    if args.get("location") is not None:
+        patch["location"] = str(args["location"])
+    if args.get("start") or args.get("minutes"):
+        old_start, all_day = parse_when(e.get("start") or {})
+        old_end, _ = parse_when(e.get("end") or {})
+        # ponytail: all-day events aren't moved here; add date-only starts if asked for.
+        if all_day:
+            raise Failure("Évènement sur la journée entière: je ne sais changer que les heures")
+        try:
+            start = (datetime.datetime.strptime(str(args["start"]), "%Y-%m-%d %H:%M") if args.get("start")
+                     else old_start.replace(tzinfo=None))
+        except ValueError:
+            raise Failure("start: AAAA-MM-JJ HH:MM (heure locale)")
+        length = (datetime.timedelta(minutes=max(5, min(24 * 60, int(args["minutes"])))) if args.get("minutes")
+                  else old_end - old_start)
+        zone = local_zone()
+        patch["start"] = {"dateTime": start.isoformat(), "timeZone": zone}
+        patch["end"] = {"dateTime": (start + length).isoformat(), "timeZone": zone}
+    if not patch:
+        raise Failure("Rien à changer: donne title, start, minutes ou location")
+    api(account, "PATCH", url, patch)
+    return {"updated": patch.get("summary", e.get("summary") or ""), "id": args["id"], "account": account,
+            **({"start": patch["start"]["dateTime"][:16].replace("T", " ")} if "start" in patch else {})}
+
+
+def calendar_delete(args):
+    account, url, e = checked_event(args)
+    api(account, "DELETE", url)
+    return {"deleted": e.get("summary") or "", "account": account}
 
 
 _announced = set()
@@ -502,6 +635,16 @@ def contacts_search(args):
             got = api(account, "GET", f"{PEOPLE}/people:searchContacts",
                       query={"query": query, "readMask": READ_MASK, "pageSize": limit}).get("results", [])
             rows += [person(account, r["person"]) for r in got]
+            # Colleagues in the company directory (Workspace accounts that granted it).
+            if granted(account, DIRECTORY):
+                try:
+                    found = api(account, "GET", f"{PEOPLE}/people:searchDirectoryPeople", query={
+                        "query": query, "readMask": READ_MASK, "pageSize": limit,
+                        "sources": ["DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE", "DIRECTORY_SOURCE_TYPE_DOMAIN_CONTACT"]}).get("people", [])
+                    seen = {e for r in rows for e in r["emails"]}
+                    rows += [p for p in (person(account, f, "directory") for f in found) if not set(p["emails"]) & seen]
+                except Failure:
+                    pass  # a personal account has no directory
             other = api(account, "GET", f"{PEOPLE}/otherContacts:search",
                         query={"query": query, "readMask": "names,emailAddresses,phoneNumbers", "pageSize": limit}).get("results", [])
             seen = {e for r in rows for e in r["emails"]}
@@ -537,7 +680,16 @@ ROLES = {
                       {"type": "object", "properties": {}}),
         "create": (calendar_create, "Add a Google Calendar event.",
                    {"type": "object", "required": ["title", "start"], "properties": {
-                       "title": S, "start": S, "minutes": I, "location": S, "account": S, "calendar": S}}),
+                       "title": S, "start": S, "minutes": I, "location": S, "account": S, "calendar": S,
+                       "attendees": {"type": "array", "items": S}, "meet": B}}),
+        "busy": (calendar_busy, "Other people's busy periods (Google free/busy).",
+                 {"type": "object", "required": ["emails"], "properties": {
+                     "emails": {"type": "array", "items": S}, "date": S, "days": I, "account": S}}),
+        "update": (calendar_update, "Change a Google Calendar event (one occurrence of a series).",
+                   {"type": "object", "required": ["id", "event"], "properties": {
+                       "id": S, "event": S, "title": S, "start": S, "minutes": I, "location": S}}),
+        "delete": (calendar_delete, "Delete a Google Calendar event (one occurrence of a series).",
+                   {"type": "object", "required": ["id", "event"], "properties": {"id": S, "event": S}}),
     },
     "contacts": {
         "search": (contacts_search, "Google contacts (and people you've emailed) by name or address.",
@@ -565,7 +717,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-google", "version": "0.1.0"}}
+                  "serverInfo": {"name": "samantha-google", "version": "0.2.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

@@ -2,7 +2,7 @@
   "methods": [
     {
       "name": "events",
-      "description": "Events from every calendar (or one account), soonest first: `days` from `date` (default today, 1 day; up to 62), optional search on title, place and notes. Times are local; `day` is today/tomorrow/weekday. {events: [{title, calendar, account, start, end, day, all_day, location, description, meeting_url, meeting}], errors?}; meeting is the video service (Teams, Zoom, Google Meet…) when the event has a join link.",
+      "description": "Events from every calendar (or one account), soonest first: `days` from `date` (default today, 1 day; up to 62), optional search on title, place and notes. Times are local; `day` is today/tomorrow/weekday. {events: [{id, title, calendar, account, start, end, day, all_day, location, description, meeting_url, meeting}], errors?}; meeting is the video service (Teams, Zoom, Google Meet…) when the event has a join link. id (provider:…) is what calendar.update and calendar.delete take; read-only calendars (iCal feeds) give an empty id.",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -32,6 +32,7 @@
         "account"
       ],
       "ids": [
+        "id",
         "account"
       ]
     },
@@ -53,8 +54,49 @@
       ]
     },
     {
+      "name": "busy",
+      "description": "When other people are busy, from their calendars as the provider shows them (colleagues in the same Google Workspace or Microsoft 365 organization): `days` from `date` (default today, 1 day; up to 14). Rows: {email, start, end} for each busy period (local times), {email, seen: true} when the person's calendar could be read, {email, seen: false, reason} when it couldn't. calendar.free {with} uses it.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "emails"
+        ],
+        "properties": {
+          "emails": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "date": {
+            "type": "string",
+            "description": "YYYY-MM-DD"
+          },
+          "days": {
+            "type": "integer"
+          },
+          "account": {
+            "type": "string",
+            "description": "An account from calendar.calendars (provider:name); omitted: every account."
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "busy",
+        "sort": "start"
+      },
+      "route": [
+        "account"
+      ],
+      "ids": [
+        "account"
+      ]
+    },
+    {
       "name": "create",
-      "description": "Add an event: title, start (YYYY-MM-DD HH:MM local), minutes (default 60), optional location; account (provider:name) and calendar name pick where.",
+      "description": "Add an event: title, start (YYYY-MM-DD HH:MM local), minutes (default 60), optional location; account (provider:name) and calendar name pick where. attendees (email addresses) get an invitation from the provider; meet adds a video link (Google Meet, Teams). Result: {created, account, start, minutes, attendees?, meeting_url?}.",
       "inputSchema": {
         "type": "object",
         "required": [
@@ -80,6 +122,17 @@
           },
           "calendar": {
             "type": "string"
+          },
+          "attendees": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Email addresses to invite; the provider sends them the invitation."
+          },
+          "meet": {
+            "type": "boolean",
+            "description": "Add a video meeting link."
           }
         }
       },
@@ -89,6 +142,79 @@
         "account"
       ],
       "ids": [
+        "account"
+      ]
+    },
+    {
+      "name": "update",
+      "description": "Change an event: new title, start (YYYY-MM-DD HH:MM local; the length is kept unless minutes is given), minutes or location. One occurrence of a recurring event changes only that occurrence where the provider allows it.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id",
+          "event"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "An event id from calendar.events (provider:…)."
+          },
+          "event": {
+            "type": "string",
+            "description": "The event's current title, as calendar.events gave it: shown to the user when they confirm, and checked against the id."
+          },
+          "title": {
+            "type": "string",
+            "description": "A new title."
+          },
+          "start": {
+            "type": "string"
+          },
+          "minutes": {
+            "type": "integer"
+          },
+          "location": {
+            "type": "string"
+          }
+        }
+      },
+      "class": "confirm",
+      "data": "personal",
+      "route": [
+        "id"
+      ],
+      "ids": [
+        "id",
+        "account"
+      ]
+    },
+    {
+      "name": "delete",
+      "description": "Cancel (delete) an event; for a recurring event, only this occurrence where the provider allows it. Only on the user's explicit request; they confirm it.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id",
+          "event"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "An event id from calendar.events (provider:…)."
+          },
+          "event": {
+            "type": "string",
+            "description": "The event's current title, as calendar.events gave it: shown to the user when they confirm, and checked against the id."
+          }
+        }
+      },
+      "class": "confirm",
+      "data": "personal",
+      "route": [
+        "id"
+      ],
+      "ids": [
+        "id",
         "account"
       ]
     }

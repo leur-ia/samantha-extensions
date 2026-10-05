@@ -1,6 +1,6 @@
 id = "caldav"
 name = "CalDAV calendars"
-version = "0.2.0"
+version = "0.3.0"
 description = "Calendar provider for CalDAV accounts (Infomaniak, Zoho, Fastmail, Nextcloud…) and iCal feeds: the calendar capability's methods; reminders before events."
 
 # Stdlib-only Python. Accounts in ~/.config/samantha/calendar.toml; each password or
@@ -15,6 +15,8 @@ args = ["server.py"]
 [[provides]]
 capability = "calendar"
 server = "caldav"
+# Not busy: CalDAV has no common way to read other people's free/busy.
+methods = ["events", "calendars", "create", "update", "delete"]
 
 [needs]
 network = true
@@ -40,5 +42,14 @@ data = "personal"
 
 # Writes to the user's calendar, seen by everyone it is shared with.
 [tools."caldav.create"]
+class = "confirm"
+data = "personal"
+
+# Changes or removes the user's event, seen by everyone it is shared with.
+[tools."caldav.update"]
+class = "confirm"
+data = "personal"
+
+[tools."caldav.delete"]
 class = "confirm"
 data = "personal"

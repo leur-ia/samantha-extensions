@@ -4,7 +4,7 @@ description: The user's address book: find someone's email address or phone numb
 ---
 # Contacts
 
-- `contacts.search {query, account?, limit?}` → `{contacts: [{id, account, name, emails, phones, organization, kind}], errors?}`. `query` is a name, part of an address or a company. `kind: "other"` is someone the user emailed but never saved.
+- `contacts.search {query, account?, limit?}` → `{contacts: [{id, account, name, emails, phones, organization, kind}], errors?}`. `query` is a name, part of an address or a company. `kind: "other"` is someone the user emailed but never saved; `kind: "directory"` is a colleague from the company directory (Google Workspace accounts signed in with that access: if a colleague can't be found, suggest `samantha account add google` again).
 
 Answering:
 - "Écris à Ana", "envoie un SMS à Marc": search first, then use the address or number found. Several matches: ask which (say their organization or address). None: ask for the address.

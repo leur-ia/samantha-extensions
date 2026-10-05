@@ -39,13 +39,24 @@ class Fake:
         elif path == "/me/messages/AAMk1":
             body = {**INBOX["value"][0], "body": {"content": "Bonjour"}, "toRecipients": [{"emailAddress": {"address": "me@outlook.com"}}],
                     "hasAttachments": False}
+        elif path == "/me/events/AAMkE%2B1%3D" and req.get_method() == "GET":
+            body = {"subject": "Réunion", "isAllDay": False, "start": {"dateTime": "2026-10-06T10:00:00.0000000"},
+                    "end": {"dateTime": "2026-10-06T11:00:00.0000000"}}
         elif path == "/me/calendarView":
-            body = {"value": [{"subject": "Réunion", "start": {"dateTime": "2026-10-06T10:00:00.0000000"},
+            body = {"value": [{"id": "AAMkE+1=", "subject": "Réunion", "start": {"dateTime": "2026-10-06T10:00:00.0000000"},
                                "end": {"dateTime": "2026-10-06T11:00:00.0000000"}, "isAllDay": False,
                                "location": {"displayName": "Salle 2"}, "bodyPreview": "",
                                "onlineMeeting": {"joinUrl": "https://teams.microsoft.com/l/meetup-join/abc"}, "onlineMeetingProvider": "teamsForBusiness"},
                               {"subject": "Annulé", "isCancelled": True, "start": {"dateTime": "2026-10-06T12:00:00"},
                                "end": {"dateTime": "2026-10-06T13:00:00"}}]}
+        elif path == "/me/calendar/getSchedule":
+            body = {"value": [
+                {"scheduleId": "Fred@Corp.com", "scheduleItems": [
+                    {"status": "busy", "start": {"dateTime": "2026-10-06T10:00:00.0000000"}, "end": {"dateTime": "2026-10-06T11:00:00.0000000"}},
+                    {"status": "free", "start": {"dateTime": "2026-10-06T12:00:00.0000000"}, "end": {"dateTime": "2026-10-06T13:00:00.0000000"}}]},
+                {"scheduleId": "out@else.com", "error": {"responseCode": "ErrorMailboxNotFound", "message": "x"}}]}
+        elif path == "/me/events" and req.get_method() == "POST":
+            body = {"id": "NEW", "onlineMeeting": {"joinUrl": "https://teams.microsoft.com/l/new"}} if json.loads(req.data).get("isOnlineMeeting") else {"id": "NEW"}
         elif path == "/me/calendars":
             body = {"value": [{"id": "c1", "name": "Calendrier", "canEdit": True}]}
         else:
@@ -117,6 +128,36 @@ class Microsoft(unittest.TestCase):
         self.assertEqual((method, path, body["start"]["timeZone"]), ("POST", "/v1.0/me/calendars/c1/events", "Europe/Paris"))
         self.assertEqual(call("calendars", {})["structuredContent"]["calendars"][0]["writable"], True)
 
+    def test_calendar_update_and_delete(self):
+        self.use(server.CALENDAR)
+        ev = call("events", {"date": "2026-10-06"})["structuredContent"]["events"][0]
+        self.assertEqual(ev["id"], "me@outlook.com/AAMkE+1=")
+        call("update", {"id": ev["id"], "event": "réunion", "start": "2026-10-07 14:00"})
+        method, path, _, body, _ = self.f.requests[-1]
+        self.assertEqual((method, path), ("PATCH", "/v1.0/me/events/AAMkE%2B1%3D"))
+        self.assertEqual((body["start"]["dateTime"], body["end"]["dateTime"], body["end"]["timeZone"]),
+                         ("2026-10-07T14:00:00", "2026-10-07T15:00:00", "Europe/Paris"))
+        r = call("delete", {"id": ev["id"], "event": "Réunion"})["structuredContent"]
+        self.assertEqual((r["deleted"], self.f.requests[-1][0]), ("Réunion", "DELETE"))
+        n = len(self.f.requests)
+        self.assertTrue(call("delete", {"id": ev["id"], "event": "Autre"})["isError"])
+        self.assertEqual([r[0] for r in self.f.requests[n:]], ["GET"], "nothing deleted")
+
+    def test_invitations_teams_and_busy(self):
+        self.use(server.CALENDAR)
+        r = call("create", {"title": "design", "start": "2026-10-06 14:30", "attendees": "fred@corp.com", "meet": True})["structuredContent"]
+        body = self.f.requests[-1][3]
+        self.assertEqual((body["attendees"], body["isOnlineMeeting"]),
+                         ([{"emailAddress": {"address": "fred@corp.com"}, "type": "required"}], True))
+        self.assertEqual((r["attendees"], r["meeting_url"]), (["fred@corp.com"], "https://teams.microsoft.com/l/new"))
+        rows = call("busy", {"emails": ["fred@corp.com", "out@else.com"], "date": "2026-10-06"})["structuredContent"]["busy"]
+        self.assertEqual(rows, [{"email": "fred@corp.com", "seen": True},
+                                {"email": "fred@corp.com", "start": "2026-10-06 10:00", "end": "2026-10-06 11:00"},
+                                {"email": "out@else.com", "seen": False, "reason": "me@outlook.com: ErrorMailboxNotFound"}])
+        sent = self.f.requests[-1][3]
+        self.assertEqual((sent["schedules"], sent["startTime"]), (["fred@corp.com", "out@else.com"],
+                                                                    {"dateTime": "2026-10-06T00:00:00", "timeZone": "Europe/Paris"}))
+
     def test_errors(self):
         self.use(server.MAIL)
         self.f.accounts = []
@@ -131,7 +172,7 @@ class Microsoft(unittest.TestCase):
         self.use(server.MAIL)
         names = [t["name"] for t in server.handle({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})["result"]["tools"]]
         self.assertEqual(names, ["accounts", "list", "search", "read", "mark_read", "draft", "send"])
-        self.assertEqual(list(server.CALENDAR), ["events", "calendars", "create"])
+        self.assertEqual(list(server.CALENDAR), ["events", "calendars", "create", "busy", "update", "delete"])
 
 
 if __name__ == "__main__":

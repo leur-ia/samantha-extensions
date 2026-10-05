@@ -1,6 +1,6 @@
 id = "microsoft"
 name = "Microsoft"
-version = "0.1.0"
+version = "0.2.0"
 description = "Mail and calendar provider for Microsoft accounts (Outlook.com, Hotmail, Microsoft 365) through Microsoft Graph."
 
 # Stdlib-only Python on Microsoft Graph. Sign-in is Samantha's: register your own app

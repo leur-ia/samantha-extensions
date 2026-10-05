@@ -1,9 +1,21 @@
 id = "calendar"
 name = "Calendar"
-version = "0.3.0"
-description = "The user's agenda across every calendar provider (CalDAV, iCal feeds, Google, Microsoft…): what's today, this week, find an event, add one."
+version = "0.4.0"
+description = "The user's agenda across every calendar provider (CalDAV, iCal feeds, Google, Microsoft…): what's today, this week, find an event, add, move or cancel one, free slots."
 
 # The calendar front (docs/plans/providers.md in Samantha): its methods are served
 # by Samantha's daemon from every provider (`[[provides]] capability = "calendar"`:
 # caldav, google, microsoft…), merged or routed by the provider prefix of accounts.
 capability = "capability.json"
+
+# The front's own server: `free` reads calendar.events from every provider through
+# the daemon (`capability.call`, read methods of this capability only) and gives the
+# gaps. No network, no files.
+[[mcp]]
+name = "agenda"
+command = "python3"
+args = ["server.py"]
+
+[tools."agenda.free"]
+class = "read"
+data = "personal"
