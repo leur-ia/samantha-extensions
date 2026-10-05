@@ -74,10 +74,22 @@ path = "extensions/spotify"                                      # its directory
 commit = "<40-hex commit>"                                       # the reviewed commit
 ```
 
+An extension with ready-made setups (`[[recipe]]` in its manifest) names their titles
+in its index file too, `recipes = ["Surveiller la boîte mail"]`, so `samantha extension
+search` finds them before install.
+
 Installing fetches exactly `commit` from `source`, checks it is what came back, shows
 the review (sandbox, tools, hooks) and asks. A release is never edited: a new one is
 added. Extensions from other repositories are welcome: open a pull request adding
 their index file. Other registries: `samantha registry add <name> <url>[#path]`.
+
+## The site
+
+`python3 scripts/site.py` builds `_site/` (one card per extension: what it does, its
+ready-made setups, tools and sandbox, read from the manifest at the pinned commit) and
+fails when an index file's `recipes` differ from the manifest's. The Site workflow runs
+it on every pull request and publishes it to GitHub Pages from `main` (Settings → Pages
+→ Source: GitHub Actions).
 
 ## Tests
 

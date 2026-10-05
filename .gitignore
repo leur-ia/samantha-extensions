@@ -3,3 +3,4 @@ output/
 target/
 .claude/
 __pycache__/
+_site/
