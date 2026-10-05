@@ -1,0 +1,7 @@
+description = "Your code forges in one place (GitHub, GitLab…): notifications, reviews waiting for you, your open pull/merge requests, repositories, CI status."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/code"
+commit = "6bb7016004af15d669f4d77dc84638f1f2ba1d04"

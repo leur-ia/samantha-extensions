@@ -1,0 +1,7 @@
+description = "Your cloud storage in one place (Google Drive, Dropbox, OneDrive, kDrive… through providers like rclone): browse, search, download, upload."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/files"
+commit = "6bb7016004af15d669f4d77dc84638f1f2ba1d04"

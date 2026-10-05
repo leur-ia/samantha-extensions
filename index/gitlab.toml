@@ -1,0 +1,7 @@
+description = "Code provider for GitLab (gitlab.com or your own host): to-dos, reviews waiting, your merge requests, projects, pipelines (your own token)."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/gitlab"
+commit = "6bb7016004af15d669f4d77dc84638f1f2ba1d04"

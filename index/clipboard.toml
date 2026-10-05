@@ -1,0 +1,7 @@
+description = "Clipboard history: what you copied in the last 3 days, searchable, put back on the clipboard; passwords never kept."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/clipboard"
+commit = "6bb7016004af15d669f4d77dc84638f1f2ba1d04"
