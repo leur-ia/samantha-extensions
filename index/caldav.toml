@@ -11,3 +11,9 @@ version = "0.2.0"
 source = "https://github.com/leur-ia/samantha-extensions.git"
 path = "extensions/caldav"
 commit = "3c677cb0e0503a1d1e7b60f8803ee017d512902f"
+
+[[release]]
+version = "0.3.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/caldav"
+commit = "09be4a63281fda299af7e0e9bf15b3a986b2ec62"

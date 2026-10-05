@@ -1,4 +1,4 @@
-description = "The user's agenda across every calendar provider (CalDAV, iCal feeds, Google, Microsoft…): what's today, this week, find an event, add one."
+description = "The user's agenda across every calendar provider (CalDAV, iCal feeds, Google, Microsoft…): what's today, this week, find an event, add, move or cancel one, free slots."
 
 [[release]]
 version = "0.1.0"
@@ -17,3 +17,9 @@ version = "0.3.0"
 source = "https://github.com/leur-ia/samantha-extensions.git"
 path = "extensions/calendar"
 commit = "3c677cb0e0503a1d1e7b60f8803ee017d512902f"
+
+[[release]]
+version = "0.4.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/calendar"
+commit = "09be4a63281fda299af7e0e9bf15b3a986b2ec62"
