@@ -1,6 +1,6 @@
 ---
 name: flights
-description: Find and compare flights: airports, offers by price and duration, an offer's conditions, and where to book it.
+description: Use to find and compare flights: airports, prices, durations, stops, an offer's baggage and conditions, where to book ("un vol Nice-Paris vendredi", "c'est combien pour Lisbonne en mai ?"). Samantha never books or pays.
 ---
 # Flights
 

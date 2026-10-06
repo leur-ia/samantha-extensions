@@ -1,6 +1,6 @@
 ---
 name: media
-description: Music, radio and anything playing on the desktop: what's playing, pause, next, volume, find and play a song, an artist or a radio station.
+description: Use for music, radio and anything playing: what's playing, pause, next, a player's own volume, find and play a song, artist, album, playlist or station ("mets du jazz", "c'est quoi cette chanson ?", "mets France Inter"). The computer's volume and output device is audio.
 ---
 # Media
 

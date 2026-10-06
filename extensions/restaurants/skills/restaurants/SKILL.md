@@ -1,6 +1,6 @@
 ---
 name: restaurants
-description: Find a restaurant: near a place, by cuisine, open now; ratings, hours, phone, and how to book a table.
+description: Use to find a restaurant: near a place, by cuisine, open now; ratings, hours, phone, and how to book a table ("un bon italien ce soir à Nice", "réserve chez Mario"). Samantha never books herself.
 ---
 # Restaurants
 

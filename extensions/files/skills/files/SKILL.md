@@ -1,6 +1,6 @@
 ---
 name: files
-description: The user's cloud storage (Google Drive, Dropbox, OneDrive, kDrive…): find a file, browse a folder, download it, upload one.
+description: Use for the user's cloud storage (Google Drive, Dropbox, OneDrive, kDrive…): find a file, browse a folder, download it, upload one ("retrouve le devis sur le Drive"). USB disks are drives; work on local folders is hire.
 ---
 # Files
 

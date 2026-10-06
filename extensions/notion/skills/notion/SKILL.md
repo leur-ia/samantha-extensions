@@ -1,6 +1,6 @@
 ---
 name: notion
-description: The user's Notion workspace - finding, reading and summarizing pages, querying databases, creating pages, adding notes and comments.
+description: Use for the user's Notion workspace: find, read or summarize a page, query a database (tasks, status), create a page, add notes or a comment ("mes notes de réunion dans Notion", "ajoute ça à ma page projet").
 ---
 # Notion
 

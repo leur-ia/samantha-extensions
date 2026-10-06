@@ -1,6 +1,6 @@
 ---
 name: code
-description: The user's code forges (GitHub, GitLab…): what needs their attention, reviews waiting, their open pull/merge requests, CI status.
+description: Use for the user's GitHub or GitLab: what needs their attention, reviews waiting, their open pull or merge requests, forge notifications, whether CI passes ("j'ai des reviews ?", "la CI est verte ?"). Writing or fixing code is hire.
 ---
 # Code
 

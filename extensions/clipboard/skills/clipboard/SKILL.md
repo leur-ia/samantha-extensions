@@ -1,6 +1,6 @@
 ---
 name: clipboard
-description: The user's clipboard history: what they copied recently, find it, put it back, summarize or translate it.
+description: Use for what the user copied earlier: clipboard history, find something copied before, put it back, summarize or translate it ("le lien que j'ai copié tout à l'heure"). The current selection and clipboard are already in your context.
 ---
 # Clipboard
 

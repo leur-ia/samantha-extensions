@@ -1,6 +1,6 @@
 ---
 name: home-assistant
-description: The user's home through Home Assistant: lights, temperatures, blinds, climate, scenes; locks and alarm only with confirmation.
+description: Use for the user's home through Home Assistant: lights, heating and room temperatures, blinds, scenes, sensors; locks, alarm and garage only with confirmation ("éteins le salon", "il fait combien dans la chambre ?").
 ---
 # Home Assistant
 

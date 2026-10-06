@@ -1,6 +1,6 @@
 ---
 name: backup
-description: The user's backups (restic): back up now, when the last backup was, browse snapshots, restore a lost file, a nightly backup.
+description: Use for the user's backups (restic): back up now, is it backed up, when was the last backup, browse snapshots, recover a deleted or overwritten file, a nightly backup ("j'ai effacé mon fichier par erreur"). Cloud storage is files.
 ---
 # Backup
 

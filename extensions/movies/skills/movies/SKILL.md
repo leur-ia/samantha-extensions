@@ -1,6 +1,6 @@
 ---
 name: movies
-description: Films and series: ratings (IMDb, Rotten Tomatoes, Metacritic, TMDB), what a film is about, what's trending, where to watch it.
+description: Use for films and series: ratings (IMDb, Rotten Tomatoes, Metacritic, TMDB), what one is about, cast, what's trending, where to stream it ("Dune 2 c'est bien ?", "un film à voir ce soir ?").
 ---
 # Movies
 

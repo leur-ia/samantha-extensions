@@ -1,6 +1,6 @@
 id = "audio"
 name = "Audio"
-version = "0.1.0"
+version = "0.1.1"
 description = "Sound devices: which speaker or headphones play, volume, mute, microphone; Bluetooth audio connect/disconnect."
 
 # Stdlib-only Python: PipeWire through pw-dump and wpctl (its socket: `audio`),

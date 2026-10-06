@@ -1,6 +1,6 @@
 ---
 name: drives
-description: USB sticks, SD cards and external disks: what's plugged in, mount it, safely eject it.
+description: Use for USB sticks, SD cards and external disks plugged into the computer: what's plugged in, mount or open one, safely eject it ("éjecte la clé"). Cloud storage is files; backups are backup.
 ---
 # Drives
 

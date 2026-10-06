@@ -1,6 +1,6 @@
 ---
 name: system
-description: Diagnose the computer: why it's slow or hot, what uses memory or disk, what runs on a port, failed services, recent errors, whether a system update waits for a reboot.
+description: Use to diagnose the computer: slow, hot or noisy, what uses CPU, memory or disk, what runs on a port, a stuck program to stop, failed services, recent errors, a system update waiting for a reboot ("pourquoi mon PC rame ?"). Battery and brightness are power; app updates are flatpak.
 ---
 # System
 

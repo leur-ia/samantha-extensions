@@ -1,6 +1,6 @@
 ---
 name: audio
-description: Sound devices and volume: switch speakers/headphones, volume up/down, mute, microphone, connect Bluetooth headphones.
+description: Use for the computer's sound: volume up or down, mute, too loud or nothing heard, which speaker, headphones or microphone is used, connecting Bluetooth headphones ("monte le son", "mets le son sur le casque", "on m'entend pas"). What plays and a player's own volume is media.
 ---
 # Audio
 

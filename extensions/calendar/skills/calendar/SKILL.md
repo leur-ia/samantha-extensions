@@ -1,6 +1,6 @@
 ---
 name: calendar
-description: The user's agenda across their calendars: what's today, tomorrow, this week; find an event; add, move or cancel one; free slots; reminders before meetings.
+description: Use for the user's agenda and meetings: what's today, tomorrow or this week, when an event is, add, move or cancel one, free slots, find a time with someone and invite them, join the current video call ("j'ai quoi demain ?", "décale le dentiste", "lance la visio"). A countdown or alarm is timers.
 ---
 # Calendar
 

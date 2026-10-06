@@ -1,6 +1,6 @@
 ---
 name: notifications
-description: The notifications the user received in the last 7 days: what they missed, from which app, searchable.
+description: Use for the desktop notifications of the last 7 days: what the user missed, from which app, finding one (a code, a message) ("j'avais une notif de la banque", "qu'est-ce que j'ai manqué ?" with watch.inbox). The phone's own notifications are phone.
 ---
 # Notifications
 

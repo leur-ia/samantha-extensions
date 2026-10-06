@@ -1,6 +1,6 @@
 id = "notion"
 name = "Notion"
-version = "0.1.0"
+version = "0.1.1"
 description = "The user's Notion workspace (official API): search, read pages, query databases, create pages, append text, comment."
 
 # Stdlib-only Python on https://api.notion.com/v1 with an internal integration token

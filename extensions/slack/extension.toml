@@ -1,6 +1,6 @@
 id = "slack"
 name = "Slack"
-version = "0.1.0"
+version = "0.1.1"
 description = "The user's Slack (official Web API, own app token): channels, history, threads, search, unread, send and react."
 
 # Stdlib-only Python on https://slack.com/api with the token of the user's own internal

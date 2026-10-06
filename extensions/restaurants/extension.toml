@@ -1,6 +1,6 @@
 id = "restaurants"
 name = "Restaurants"
-version = "0.1.0"
+version = "0.1.1"
 description = "Find restaurants across providers (Google Places, OpenStreetMap…): near a place, by cuisine, open now; details, ratings, and how to book."
 
 # The restaurants front: Samantha's daemon serves it from every provider of

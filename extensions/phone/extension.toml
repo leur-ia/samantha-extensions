@@ -1,6 +1,6 @@
 id = "phone"
 name = "Phone"
-version = "0.1.0"
+version = "0.1.1"
 description = "The user's phone through KDE Connect: ring it, battery, its notifications, send an SMS, share a file or link."
 
 # Stdlib-only Python driving kdeconnectd (the image ships KDE Connect) through

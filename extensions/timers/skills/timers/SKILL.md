@@ -1,6 +1,6 @@
 ---
 name: timers
-description: Timers, alarms and pomodoros that show on the island and ring at the end.
+description: Use for timers, alarms and pomodoros that show on the island and ring at the end ("minuteur 10 minutes", "réveille-moi à 7 h"). Calendar events are calendar; "préviens-moi quand…" something happens is a watcher.
 ---
 # Timers
 

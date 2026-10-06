@@ -1,6 +1,6 @@
 id = "notifications"
 name = "Notifications"
-version = "0.1.0"
+version = "0.1.1"
 description = "Notification history: what the user was notified of and missed (7 days), searchable."
 
 # Stdlib-only Python watching Notify calls on the session bus (`busctl --user monitor`)

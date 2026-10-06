@@ -1,6 +1,6 @@
 ---
 name: slack
-description: Read and write the user's Slack (official Web API, their own app's token): channels, recent messages, threads, search, unread, send, react.
+description: Use for the user's Slack: what's new in a channel, unread messages, a thread, search, post a message or react ("j'ai des messages Slack ?", "dis à l'équipe sur #projet que je suis en retard").
 ---
 # Slack
 

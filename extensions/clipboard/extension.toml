@@ -1,6 +1,6 @@
 id = "clipboard"
 name = "Clipboard"
-version = "0.1.0"
+version = "0.1.1"
 description = "Clipboard history: what you copied in the last 3 days, searchable, put back on the clipboard; passwords never kept."
 
 # Stdlib-only Python with wl-clipboard (in the image): `wl-paste --watch` records

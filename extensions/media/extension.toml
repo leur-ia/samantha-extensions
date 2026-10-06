@@ -1,6 +1,6 @@
 id = "media"
 name = "Media"
-version = "0.2.0"
+version = "0.2.1"
 description = "Music, radio and everything playing, whatever the provider (MPRIS players, Spotify, radio…): what's playing, play/pause/next, volume, find and play something."
 
 # The media front (docs/plans/providers.md in Samantha): served by Samantha's daemon

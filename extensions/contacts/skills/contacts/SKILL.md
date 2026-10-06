@@ -1,6 +1,6 @@
 ---
 name: contacts
-description: The user's address book: find someone's email address or phone number, for a mail, an SMS or a call.
+description: Use to find someone's email address or phone number in the user's address book or company directory, including before writing, texting, calling or inviting a person named but not addressed ("c'est quoi le mail de Frédéric ?", "écris à Ana").
 ---
 # Contacts
 

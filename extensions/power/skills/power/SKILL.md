@@ -1,6 +1,6 @@
 ---
 name: power
-description: Battery, power profile, screen brightness, and locking, suspending or hibernating the computer now or later.
+description: Use for the laptop's battery and power: battery left, power-saving or performance mode, screen brightness, lock, suspend or hibernate now or later ("mets en veille dans 30 minutes", "baisse la luminosité"). Slowness or heat is system.
 ---
 # Power
 

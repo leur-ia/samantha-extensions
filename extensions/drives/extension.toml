@@ -1,6 +1,6 @@
 id = "drives"
 name = "Drives"
-version = "0.1.0"
+version = "0.1.1"
 description = "USB sticks, SD cards and external disks: what's plugged in, mount, safely eject; an island notice when one is plugged."
 
 # Stdlib-only Python: lsblk to list, udisksctl to mount and eject (polkit allows the

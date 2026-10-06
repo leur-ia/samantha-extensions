@@ -1,6 +1,6 @@
 id = "vpn"
 name = "VPN"
-version = "0.1.0"
+version = "0.1.1"
 description = "VPN connections NetworkManager knows (WireGuard, OpenVPN, Proton…): status, connect, disconnect."
 
 # Stdlib-only Python driving NetworkManager through nmcli on the system bus.

@@ -1,6 +1,6 @@
 ---
 name: discord
-description: Read and post on Discord through the user's own bot (official API): servers, channels, recent messages, send, react.
+description: Use to read or post on Discord servers through the user's own bot: what's new in a channel, recent messages, send, react ("quoi de neuf sur le Discord des amis ?"). The bot doesn't see private messages.
 ---
 # Discord
 

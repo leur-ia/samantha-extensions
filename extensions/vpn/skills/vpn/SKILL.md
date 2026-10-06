@@ -1,6 +1,6 @@
 ---
 name: vpn
-description: The user's VPNs (WireGuard, OpenVPN, Proton…): am I connected, connect, disconnect.
+description: Use for the user's VPNs (WireGuard, OpenVPN, Proton…): am I connected, connect, disconnect ("active le VPN").
 ---
 # VPN
 
