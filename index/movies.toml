@@ -5,3 +5,9 @@ version = "0.1.0"
 source = "https://github.com/leur-ia/samantha-extensions.git"
 path = "extensions/movies"
 commit = "3c677cb0e0503a1d1e7b60f8803ee017d512902f"
+
+[[release]]
+version = "0.1.1"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/movies"
+commit = "784da54db3d2d157325d7332ae225e2d2e314b73"
