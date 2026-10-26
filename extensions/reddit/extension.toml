@@ -1,0 +1,60 @@
+id = "reddit"
+name = "Reddit"
+version = "0.1.0"
+description = "Social provider for Reddit (official API): the front page, inbox, search by words or r/subreddit, threads, post, reply and upvote."
+
+# Stdlib-only Python on Reddit's official OAuth2 API (oauth.reddit.com), never
+# scraped pages. Setup, per account:
+#   1. reddit.com/prefs/apps: create an app of type "script", redirect uri
+#      http://localhost:8080; its client id is the string under its name.
+#   2. ~/.config/otto/social.toml:
+#        [reddit.perso]
+#        username = "my_reddit_name"
+#        client_id = "the-app-client-id"
+#   3. `otto provider set-key social-perso` with `<client secret>:<account password>`
+#      (one Secret Service item, split on the first colon), asked of the daemon at use.
+# The password grant doesn't pass two-factor authentication: use an account without it.
+[[mcp]]
+name = "reddit"
+command = "python3"
+args = ["server.py"]
+
+# A social provider: the model reaches these tools through social.* (the front).
+[[provides]]
+capability = "social"
+server = "reddit"
+
+[needs]
+network = true
+read = ["~/.config/otto/social.toml"]
+secrets = ["social-*"]
+
+[tools."reddit.accounts"]
+class = "read"
+data = "personal"
+
+[tools."reddit.feed"]
+class = "read"
+data = "personal"
+
+[tools."reddit.notifications"]
+class = "read"
+data = "personal"
+
+[tools."reddit.search"]
+class = "read"
+data = "web"
+
+[tools."reddit.thread"]
+class = "read"
+data = "personal"
+
+# Public, seen by everyone on Reddit.
+[tools."reddit.post"]
+class = "confirm"
+data = "personal"
+
+# Undone with undo: true (the vote is cleared).
+[tools."reddit.like"]
+class = "reversible"
+data = "personal"

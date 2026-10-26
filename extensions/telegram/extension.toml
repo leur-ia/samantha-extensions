@@ -1,0 +1,42 @@
+id = "telegram"
+name = "Telegram"
+version = "0.1.0"
+description = "Telegram through the user's own bot (official Bot API): chats it has seen, recent messages, send and react; new-message events."
+
+# Stdlib-only Python on the Telegram Bot API with the token of the user's own bot, from
+# @BotFather. User accounts (MTProto userbots) are never supported. The Bot API has no
+# chat list nor history: the server keeps what the bot saw (chats, the last 200
+# messages of each, the getUpdates offset) in its state dir. Setup: skills/telegram.
+[[mcp]]
+name = "telegram"
+command = "python3"
+args = ["server.py"]
+secrets = { TELEGRAM_TOKEN = "secret:telegram" }
+
+[needs]
+network = true
+secrets = ["telegram"]
+write = ["~/.local/state/otto/telegram"]
+
+# A new incoming message in a chat the bot is in: {chat (name), chat_id, from, text
+# (first 200 characters), id}. Not the bot's own messages, nor edits.
+[[event]]
+type = "telegram.message"
+data_class = "personal"
+
+[tools."telegram.chats"]
+class = "read"
+data = "personal"
+
+[tools."telegram.messages"]
+class = "read"
+data = "personal"
+
+# Undone by setting an empty emoji (removes the bot's reaction).
+[tools."telegram.react"]
+class = "reversible"
+data = "personal"
+
+[tools."telegram.send"]
+class = "confirm"
+data = "personal"

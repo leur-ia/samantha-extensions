@@ -1,0 +1,10 @@
+id = "social"
+name = "Social"
+version = "0.1.0"
+description = "The user's social networks in one place (Mastodon, Bluesky, Reddit…): their feed, notifications, search, read a thread, post, reply and like."
+
+# The social front: Otto's daemon serves it from every provider of `social`. Each
+# provider reads ~/.config/otto/social.toml for its accounts ([<provider>.<name>]) and
+# asks the daemon for the account's secret (social-<name>). Official APIs only: X,
+# Instagram, Facebook, LinkedIn and Threads offer none for a personal account.
+capability = "capability.json"

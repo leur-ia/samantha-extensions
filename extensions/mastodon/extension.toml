@@ -1,0 +1,61 @@
+id = "mastodon"
+name = "Mastodon"
+version = "0.1.0"
+description = "Social provider for Mastodon accounts (official REST API): home feed, notifications, search and tags, threads, post, reply and favourite."
+
+# Stdlib-only Python on the Mastodon REST API (v1/v2) of each account's instance.
+# Setup, per account:
+# 1. On the instance: Préférences → Développement → Nouvelle application, scopes
+#    `read write` (or read:statuses read:notifications read:search write:statuses
+#    write:favourites); copy « Votre jeton d'accès ».
+# 2. In ~/.config/otto/social.toml:
+#        [mastodon.perso]
+#        instance = "https://mastodon.social"
+#        handle = "@moi@mastodon.social"   # optional
+# 3. `otto provider set-key social-perso` and paste the token (Secret Service item
+#    social-<name>, asked of the daemon at use; never in the file, never logged).
+[[mcp]]
+name = "mastodon"
+command = "python3"
+args = ["server.py"]
+
+# A social provider: the model reaches these tools through social.* (the front).
+[[provides]]
+capability = "social"
+server = "mastodon"
+
+[needs]
+network = true
+read = ["~/.config/otto/social.toml"]
+secrets = ["social-*"]
+
+[tools."mastodon.accounts"]
+class = "read"
+data = "personal"
+
+[tools."mastodon.feed"]
+class = "read"
+data = "personal"
+
+[tools."mastodon.notifications"]
+class = "read"
+data = "personal"
+
+# Public posts of anyone: web data.
+[tools."mastodon.search"]
+class = "read"
+data = "web"
+
+[tools."mastodon.thread"]
+class = "read"
+data = "personal"
+
+# Public and seen by others.
+[tools."mastodon.post"]
+class = "confirm"
+data = "personal"
+
+# Undone with undo: true.
+[tools."mastodon.like"]
+class = "reversible"
+data = "personal"

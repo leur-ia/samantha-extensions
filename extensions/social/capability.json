@@ -1,0 +1,219 @@
+{
+  "methods": [
+    {
+      "name": "accounts",
+      "description": "The user's social accounts: {accounts: [{id, account, network, handle, url}]}.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "accounts"
+      },
+      "route": [],
+      "ids": [
+        "id"
+      ]
+    },
+    {
+      "name": "feed",
+      "description": "The newest posts of the people and communities the user follows, newest first: {posts: [{id, account, network, author, handle, time, text, url, replies?, likes?, reposts?, media?: [{kind, url, alt}], reply_to?}], errors?}.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "type": "string",
+            "description": "An account name from social.accounts (omitted: every account)."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "At most this many (default 20)."
+          },
+          "since": {
+            "type": "string",
+            "description": "Only posts after this ISO date or time."
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "posts",
+        "sort": "time",
+        "descending": true
+      },
+      "route": [
+        "account"
+      ],
+      "ids": [
+        "id",
+        "reply_to"
+      ]
+    },
+    {
+      "name": "notifications",
+      "description": "What happened around the user, newest first: {items: [{id, account, network, kind: mention|reply|like|repost|follow|other, from, handle, time, text?, post_id?}], errors?}.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "type": "string",
+            "description": "An account name from social.accounts (omitted: every account)."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "At most this many (default 20)."
+          },
+          "unread": {
+            "type": "boolean",
+            "description": "Only those not seen yet, where the network says so."
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "merge": {
+        "list": "items",
+        "sort": "time",
+        "descending": true
+      },
+      "route": [
+        "account"
+      ],
+      "ids": [
+        "id",
+        "post_id"
+      ]
+    },
+    {
+      "name": "search",
+      "description": "Public posts matching words, newest first: {posts: [{id, account, network, author, handle, time, text, url, replies?, likes?, reposts?, media?: [{kind, url, alt}], reply_to?}], errors?}. A community or tag can be in the query (Reddit: r/name, Mastodon and Bluesky: #tag).",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "account": {
+            "type": "string",
+            "description": "An account name from social.accounts (omitted: every account)."
+          },
+          "limit": {
+            "type": "integer",
+            "description": "At most this many (default 20)."
+          }
+        }
+      },
+      "class": "read",
+      "data": "web",
+      "merge": {
+        "list": "posts",
+        "sort": "time",
+        "descending": true
+      },
+      "route": [
+        "account"
+      ],
+      "ids": [
+        "id",
+        "reply_to"
+      ]
+    },
+    {
+      "name": "thread",
+      "description": "One post with its context and replies: {post: {id, account, network, author, handle, time, text, url, replies?, likes?, reposts?, media?: [{kind, url, alt}], reply_to?}, ancestors: [...], replies: [...]}.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A post id from feed, search or notifications (provider:…)."
+          }
+        }
+      },
+      "class": "read",
+      "data": "personal",
+      "route": [
+        "id"
+      ],
+      "ids": [
+        "id",
+        "reply_to"
+      ]
+    },
+    {
+      "name": "post",
+      "description": "Publishes a post, or a reply with reply_to, from one account: {id, url}. Public and seen by others: always asked to the user first.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "account": {
+            "type": "string",
+            "description": "Which account posts (required without reply_to when there are several)."
+          },
+          "reply_to": {
+            "type": "string",
+            "description": "A post id to answer (its account is used)."
+          },
+          "title": {
+            "type": "string",
+            "description": "Reddit only: the title of a new post."
+          },
+          "community": {
+            "type": "string",
+            "description": "Reddit only: the subreddit of a new post (r/name)."
+          }
+        }
+      },
+      "class": "confirm",
+      "data": "personal",
+      "route": [
+        "reply_to",
+        "account"
+      ],
+      "ids": [
+        "id"
+      ]
+    },
+    {
+      "name": "like",
+      "description": "Likes (favourites, upvotes) a post, or takes the like back with undo: true: {id, liked}.",
+      "inputSchema": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "undo": {
+            "type": "boolean"
+          }
+        }
+      },
+      "class": "reversible",
+      "data": "personal",
+      "route": [
+        "id"
+      ],
+      "ids": [
+        "id"
+      ]
+    }
+  ]
+}

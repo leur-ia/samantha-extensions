@@ -1,0 +1,31 @@
+id = "shell"
+name = "Shell"
+version = "0.1.0"
+description = "The command line, with you approving each command: run one in your folders (convert, compress, download, search, git…), read a tool's manual, see which tools are installed."
+
+# Stdlib-only Python running bash. Every `shell.run` is a confirmation: the user sees
+# the exact command first. Its sandbox: the network, the everyday folders read-write,
+# the files sent from the app read-only; never the hidden folders (keys, settings,
+# Otto's own), never sudo (no new privileges). The rest of the home is an empty,
+# temporary folder.
+[[mcp]]
+name = "shell"
+command = "python3"
+args = ["server.py"]
+
+[needs]
+network = true
+write = ["~/Documents", "~/Downloads", "~/Pictures", "~/Music", "~/Videos", "~/Desktop", "~/src", "~/Projects", "~/otto"]
+read = ["~/.local/share/otto/uploads"]
+
+[tools."shell.run"]
+class = "confirm"
+data = "personal"
+
+[tools."shell.help"]
+class = "read"
+data = "web"
+
+[tools."shell.which"]
+class = "read"
+data = "web"

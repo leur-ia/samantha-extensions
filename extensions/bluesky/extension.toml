@@ -1,0 +1,58 @@
+id = "bluesky"
+name = "Bluesky"
+version = "0.1.0"
+description = "Social provider for Bluesky (AT Protocol): timeline, notifications, search, threads, post, reply and like."
+
+# Stdlib-only Python on the AT Protocol (XRPC over HTTPS, the account's PDS).
+# Setup, per account:
+#   1. In ~/.config/otto/social.toml:
+#        [bluesky.perso]
+#        handle = "name.bsky.social"
+#        service = "https://bsky.social"   # optional: the PDS, when not bsky.social
+#   2. In Bluesky: Paramètres → Confidentialité et sécurité → Mots de passe d'application,
+#      create one (never the main password).
+#   3. `otto provider set-key social-perso` with that app password: the Secret Service
+#      item the server asks the daemon for (`secrets.get`). Usage: the social front's skill.
+[[mcp]]
+name = "bluesky"
+command = "python3"
+args = ["server.py"]
+
+# A social provider: the model reaches these tools through social.* (the front).
+[[provides]]
+capability = "social"
+server = "bluesky"
+
+[needs]
+network = true
+read = ["~/.config/otto/social.toml"]
+secrets = ["social-*"]
+
+[tools."bluesky.accounts"]
+class = "read"
+data = "personal"
+
+[tools."bluesky.feed"]
+class = "read"
+data = "personal"
+
+[tools."bluesky.notifications"]
+class = "read"
+data = "personal"
+
+[tools."bluesky.thread"]
+class = "read"
+data = "personal"
+
+[tools."bluesky.search"]
+class = "read"
+data = "web"
+
+[tools."bluesky.post"]
+class = "confirm"
+data = "personal"
+
+# Undone with undo: true.
+[tools."bluesky.like"]
+class = "reversible"
+data = "personal"
