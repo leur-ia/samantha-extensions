@@ -11,3 +11,9 @@ version = "0.1.1"
 source = "https://github.com/leur-ia/samantha-extensions.git"
 path = "extensions/power"
 commit = "784da54db3d2d157325d7332ae225e2d2e314b73"
+
+[[release]]
+version = "0.1.2"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/power"
+commit = "272b3ae26719e9648a16582039a636241bcb75ec"

@@ -5,3 +5,9 @@ version = "0.1.0"
 source = "https://github.com/leur-ia/samantha-extensions.git"
 path = "extensions/gitlab"
 commit = "6bb7016004af15d669f4d77dc84638f1f2ba1d04"
+
+[[release]]
+version = "0.1.1"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/gitlab"
+commit = "272b3ae26719e9648a16582039a636241bcb75ec"
