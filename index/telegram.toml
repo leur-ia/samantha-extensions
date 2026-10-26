@@ -1,0 +1,7 @@
+description = "Telegram through the user's own bot (official Bot API): chats it has seen, recent messages, send and react; new-message events."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/telegram"
+commit = "8ec57a6ad48f5948c526606f2f8b3f5621aecaf8"

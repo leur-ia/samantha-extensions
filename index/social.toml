@@ -1,0 +1,7 @@
+description = "The user's social networks in one place (Mastodon, Bluesky, Reddit…): their feed, notifications, search, read a thread, post, reply and like."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/social"
+commit = "8ec57a6ad48f5948c526606f2f8b3f5621aecaf8"

@@ -22,15 +22,16 @@ implements them. Adding a service to a domain is writing a provider.
 | Extension | Kind | What Otto gets |
 |---|---|---|
 | audio | | Speakers, headphones, volume, mute, Bluetooth audio |
+| backup | | restic backups: back up, snapshots, restore |
+| bluesky | provider: social | Bluesky feed, notifications, posts (app password) |
+| caldav | provider: calendar | CalDAV accounts and iCal feeds, meeting links, reminders |
 | calendar | front | One agenda across calendar providers |
 | clipboard | | Clipboard history (passwords never kept) |
 | code | front | GitHub/GitLab inbox, reviews, PRs/MRs, CI |
 | contacts | front | One address book across providers |
-| backup | | restic backups: back up, snapshots, restore |
-| caldav | provider: calendar | CalDAV accounts and iCal feeds, meeting links, reminders |
 | discord | | The user's own bot: servers, channels, messages, send |
-| duffel | provider: flights | Flight offers from 300+ airlines (search only) |
 | drives | | USB sticks and disks: mount, eject, plug notices |
+| duffel | provider: flights | Flight offers from 300+ airlines (search only) |
 | files | front | Cloud storage: browse, search, download, upload |
 | flights | front | Find and compare flights, a link to book |
 | github | provider: code | GitHub notifications, reviews, Actions |
@@ -38,6 +39,7 @@ implements them. Adding a service to a domain is writing a provider.
 | google | provider: mail, calendar, contacts | Gmail, Google Calendar (Meet links, reminders), Google Contacts |
 | google-places | provider: restaurants | Google ratings, hours, reviews, reservations |
 | home-assistant | | Home Assistant states and controls |
+| mastodon | provider: social | Mastodon feed, notifications, posts (your token) |
 | media | front | Everything playing, search and play across providers |
 | microsoft | provider: mail, calendar | Outlook mail and calendar (Teams links) through Microsoft Graph |
 | movies | front | Film ratings, details, trends, where to watch |
@@ -50,10 +52,14 @@ implements them. Adding a service to a domain is writing a provider.
 | power | | Battery, power profile, brightness, suspend |
 | radio | provider: media | Live radio (radio-browser.info) |
 | rclone | provider: files | Every rclone remote (Drive, Dropbox, OneDrive…) |
+| reddit | provider: social | Reddit feed, inbox, posts and comments (script app) |
 | restaurants | front | Find a restaurant, details, how to book |
+| shell | | One command at a time, each approved, in your folders |
 | slack | | The user's Slack through their own app token |
+| social | front | Feed, notifications, search, posts across your networks |
 | spotify | provider: media | Spotify catalog search and play |
 | system | | Load, processes, ports, errors, image updates |
+| telegram | | Your own bot: chats, messages, send, react |
 | timers | | Timers and alarms on the island |
 | tmdb | provider: movies | TMDB search, details, trends, where to watch (JustWatch) |
 | vpn | | NetworkManager VPNs |

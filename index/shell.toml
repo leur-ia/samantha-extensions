@@ -1,0 +1,7 @@
+description = "The command line, with you approving each command: run one in your folders (convert, compress, download, search, git…), read a tool's manual, see which tools are installed."
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/shell"
+commit = "8ec57a6ad48f5948c526606f2f8b3f5621aecaf8"
