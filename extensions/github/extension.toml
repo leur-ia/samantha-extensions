@@ -1,9 +1,9 @@
 id = "github"
 name = "GitHub"
-version = "0.1.0"
+version = "0.1.1"
 description = "Code provider for GitHub: notifications, reviews waiting, your pull requests, repositories, Actions runs (your own token)."
 
-# Stdlib-only Python on the REST API. Token: `samantha provider set-key github`.
+# Stdlib-only Python on the REST API. Token: `otto provider set-key github`.
 [[mcp]]
 name = "github"
 command = "python3"

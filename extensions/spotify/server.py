@@ -36,7 +36,7 @@ TYPES = ("track", "album", "playlist", "artist")
 NOT_RUNNING = "Spotify n'est pas lancé."
 NO_KEYS = ("Recherche Spotify non configurée: crée une app sur developer.spotify.com "
            "(Client Credentials; le propriétaire doit avoir Premium), puis enregistre ses "
-           "clés avec `samantha provider set-key spotify-client-id` et `samantha provider "
+           "clés avec `otto provider set-key spotify-client-id` et `otto provider "
            "set-key spotify-client-secret` (chaque clé est lue sur l'entrée standard).")
 
 
@@ -154,7 +154,7 @@ def http_json(req, what):
         if e.code in (400, 401) and what == "auth":
             raise Failure("Spotify refuse les identifiants de l'app (spotify-client-id / "
                           "spotify-client-secret): vérifie-les, puis réenregistre-les avec "
-                          "`samantha provider set-key`")
+                          "`otto provider set-key`")
         raise Failure(f"Spotify a refusé la requête ({e.code})")
     except (urllib.error.URLError, TimeoutError, OSError):
         raise Failure("Spotify injoignable (réseau ?)")
@@ -279,7 +279,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-spotify", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-spotify", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

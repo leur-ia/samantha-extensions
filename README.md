@@ -1,12 +1,12 @@
-# Samantha extensions
+# Otto extensions
 
-Extensions for [Samantha](https://gitlab.com/jeanbaptiste2/samantha), the intelligent
-shell for a Linux desktop, and the registry Samantha installs them from.
+Extensions for [Otto](https://gitlab.com/jeanbaptiste2/otto), the intelligent
+shell for a Linux desktop, and the registry Otto installs them from.
 
 ```
-samantha extension search            # what's here
-samantha extension install spotify   # review, then install the pinned commit
-samantha extension update            # newer releases, reviewed again
+otto extension search            # what's here
+otto extension install spotify   # review, then install the pinned commit
+otto extension update            # newer releases, reviewed again
 ```
 
 Each extension is a directory under `extensions/`: a manifest (`extension.toml`), a
@@ -14,12 +14,12 @@ stdio MCP server in Python 3 standard library only, its tests (no network), and 
 They use official access only: public APIs with the user's own tokens, D-Bus, the
 system's own tools. Secrets live in the Secret Service, never in files.
 
-Some are **fronts**: the one way Samantha talks about a domain (`mail`, `calendar`,
+Some are **fronts**: the one way Otto talks about a domain (`mail`, `calendar`,
 `media`…), served from every **provider** of it. A front declares its methods in
 `capability.json`; a provider declares `[[provides]] capability = "media"` and
 implements them. Adding a service to a domain is writing a provider.
 
-| Extension | Kind | What Samantha gets |
+| Extension | Kind | What Otto gets |
 |---|---|---|
 | audio | | Speakers, headphones, volume, mute, Bluetooth audio |
 | calendar | front | One agenda across calendar providers |
@@ -58,7 +58,7 @@ implements them. Adding a service to a domain is writing a provider.
 | tmdb | provider: movies | TMDB search, details, trends, where to watch (JustWatch) |
 | vpn | | NetworkManager VPNs |
 
-The mail front and its IMAP provider ship with Samantha itself.
+The mail front and its IMAP provider ship with Otto itself.
 
 ## The registry
 
@@ -75,13 +75,13 @@ commit = "<40-hex commit>"                                       # the reviewed 
 ```
 
 An extension with ready-made setups (`[[recipe]]` in its manifest) names their titles
-in its index file too, `recipes = ["Surveiller la boîte mail"]`, so `samantha extension
+in its index file too, `recipes = ["Surveiller la boîte mail"]`, so `otto extension
 search` finds them before install.
 
 Installing fetches exactly `commit` from `source`, checks it is what came back, shows
 the review (sandbox, tools, hooks) and asks. A release is never edited: a new one is
 added. Extensions from other repositories are welcome: open a pull request adding
-their index file. Other registries: `samantha registry add <name> <url>[#path]`.
+their index file. Other registries: `otto registry add <name> <url>[#path]`.
 
 ## The site
 

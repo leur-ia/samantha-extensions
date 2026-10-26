@@ -221,7 +221,7 @@ class Errors(Base):
         fake = self.serve({})
         with mock.patch.dict(os.environ, {"NOTION_TOKEN": ""}):
             for name, args in [("search", {"query": "x"}), ("read_page", {"id": PAGE})]:
-                self.assertError(call(name, args), "samantha provider set-key notion")
+                self.assertError(call(name, args), "otto provider set-key notion")
         self.assertEqual(fake.calls, [])
 
     def test_not_found_explains_connections(self):

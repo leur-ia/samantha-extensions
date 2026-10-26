@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MCP stdio server of the `rclone` extension (stdlib only).
 
-A provider of Samantha's `files` front: every remote the user configured with
+A provider of Otto's `files` front: every remote the user configured with
 `rclone config` (Google Drive, Dropbox, OneDrive, WebDAV/kDrive, S3…), through the
 rclone command (in the image). Methods: places, list, search, download, upload.
 Downloads go to ~/Downloads. rclone keeps its own configuration and tokens in
@@ -142,7 +142,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-rclone", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-rclone", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

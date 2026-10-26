@@ -1,10 +1,10 @@
 id = "google"
 name = "Google"
-version = "0.2.0"
+version = "0.2.1"
 description = "Mail, calendar and contacts provider for Google accounts: Gmail, Google Calendar (Meet links, reminders), Google Contacts."
 
-# Stdlib-only Python on Google's APIs. Sign-in is Samantha's: your own OAuth client
-# ("Desktop app") in [oauth.google] of config.toml, then `samantha account add google`.
+# Stdlib-only Python on Google's APIs. Sign-in is Otto's: your own OAuth client
+# ("Desktop app") in [oauth.google] of config.toml, then `otto account add google`.
 # In your Google Cloud project, enable the Gmail, Google Calendar and People APIs.
 [[mcp]]
 name = "mail"
@@ -43,7 +43,7 @@ scopes = [
   "https://www.googleapis.com/auth/contacts.readonly",
   "https://www.googleapis.com/auth/contacts.other.readonly",
   # Colleagues in a Workspace company directory (contacts.search); skipped for
-  # accounts signed in before it was asked: `samantha account add google` again.
+  # accounts signed in before it was asked: `otto account add google` again.
   "https://www.googleapis.com/auth/directory.readonly",
 ]
 

@@ -19,7 +19,7 @@ class Directory:
         self.urls, self.fail_first = [], fail_first
 
     def __call__(self, req, timeout=None):
-        assert timeout and req.get_header("User-agent").startswith("Samantha")
+        assert timeout and req.get_header("User-agent").startswith("Otto")
         self.urls.append(req.full_url)
         if self.fail_first and len(self.urls) == 1:
             raise urllib.error.URLError("down")

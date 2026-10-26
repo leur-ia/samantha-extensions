@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MCP stdio server of the `github` extension (stdlib only).
 
-A provider of Samantha's `code` front: the GitHub REST API with the user's own token
+A provider of Otto's `code` front: the GitHub REST API with the user's own token
 (GITHUB_TOKEN, Secret Service item `github`: a fine-grained or classic token with
 notifications and repository read access). Methods: inbox, reviews, mine, repos, ci,
 mark_read. Nothing is logged; no error carries the token.
@@ -24,7 +24,7 @@ KINDS = {"PullRequest": "pr", "Issue": "issue", "Release": "release", "CheckSuit
          "Commit": "commit", "Discussion": "discussion", "WorkflowRun": "ci"}
 SETUP = ("GitHub n'est pas configuré: crée un jeton (github.com > Settings > Developer settings > "
          "Personal access tokens, accès notifications et dépôts en lecture) et enregistre-le avec "
-         "`samantha provider set-key github`.")
+         "`otto provider set-key github`.")
 
 
 class Failure(Exception):
@@ -38,7 +38,7 @@ def api(method, path, query=None):
     url = API + path + (f"?{urllib.parse.urlencode(query)}" if query else "")
     req = urllib.request.Request(url, method=method, headers={
         "Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "samantha-github"})
+        "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "otto-github"})
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
             raw = r.read()
@@ -156,7 +156,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-github", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-github", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

@@ -1,6 +1,6 @@
 id = "osm"
 name = "OpenStreetMap"
-version = "0.1.0"
+version = "0.1.1"
 description = "Restaurants provider from OpenStreetMap: free, no account; cuisine, address, hours, phone, website (no ratings)."
 
 # Stdlib-only Python on Nominatim and Overpass (public instances, their usage

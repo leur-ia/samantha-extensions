@@ -4,7 +4,7 @@
 Keeps the desktop notifications the user was sent, readable again: it watches the
 session bus for `org.freedesktop.Notifications.Notify` calls (`busctl --user
 monitor`; whatever daemon shows them keeps doing so) and appends each to
-~/.local/state/samantha/notifications/history.jsonl, owner-only, for 7 days at most.
+~/.local/state/otto/notifications/history.jsonl, owner-only, for 7 days at most.
 Bodies may hold codes and messages: personal data, never logged.
 """
 
@@ -16,7 +16,7 @@ import threading
 import time
 
 PROTOCOL = "2025-06-18"
-DIR = os.path.expanduser("~/.local/state/samantha/notifications")
+DIR = os.path.expanduser("~/.local/state/otto/notifications")
 HISTORY = os.path.join(DIR, "history.jsonl")
 SEEN = os.path.join(DIR, "seen")
 KEEP_DAYS = 7
@@ -217,7 +217,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-notifications", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-notifications", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

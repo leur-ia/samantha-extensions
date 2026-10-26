@@ -204,7 +204,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-audio", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-audio", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

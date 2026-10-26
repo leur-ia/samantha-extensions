@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MCP stdio server of the `omdb` extension (stdlib only).
 
-A provider of Samantha's `movies` front: the OMDb API (omdbapi.com, an API key from
+A provider of Otto's `movies` front: the OMDb API (omdbapi.com, an API key from
 the user: OMDB_KEY, Secret Service item `omdb`), which carries IMDb, Rotten Tomatoes
 and Metacritic ratings. Methods: search, details, ratings. Failures are `isError`
 results; nothing is logged and no error carries the key.
@@ -21,7 +21,7 @@ TIMEOUT = 10
 IMDB = re.compile(r"^tt\d{5,10}$")
 KINDS = {"movie": "movie", "series": "series"}
 SETUP = ("OMDb n'est pas configuré: demande une clé sur omdbapi.com/apikey.aspx et enregistre-la "
-         "avec `samantha provider set-key omdb`.")
+         "avec `otto provider set-key omdb`.")
 
 
 class Failure(Exception):
@@ -141,7 +141,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-omdb", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-omdb", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

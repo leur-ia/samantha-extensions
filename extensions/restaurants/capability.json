@@ -61,7 +61,7 @@
     },
     {
       "name": "booking",
-      "description": "How to book a table: {reservable, booking_url?, website?, phone?, maps_url}. Samantha doesn't book: open the page or give the number.",
+      "description": "How to book a table: {reservable, booking_url?, website?, phone?, maps_url}. Otto doesn't book: open the page or give the number.",
       "inputSchema": {
         "type": "object",
         "required": [

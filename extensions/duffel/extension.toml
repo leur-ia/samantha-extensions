@@ -1,9 +1,9 @@
 id = "duffel"
 name = "Duffel"
-version = "0.1.0"
+version = "0.1.1"
 description = "Flights provider: airports, offers from 300+ airlines and their conditions (Duffel API, your own token; search only, booking on the site you open)."
 
-# Stdlib-only Python on api.duffel.com. Token: `samantha provider set-key duffel`
+# Stdlib-only Python on api.duffel.com. Token: `otto provider set-key duffel`
 # (a duffel_test_ token answers with Duffel's sandbox airline). Never books.
 [[mcp]]
 name = "duffel"

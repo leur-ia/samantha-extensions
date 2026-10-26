@@ -43,8 +43,8 @@ class Backup(unittest.TestCase):
     def setUp(self):
         d = tempfile.TemporaryDirectory()
         self.addCleanup(d.cleanup)
-        os.makedirs(os.path.join(d.name, "samantha"))
-        with open(os.path.join(d.name, "samantha", "backup.toml"), "w") as f:
+        os.makedirs(os.path.join(d.name, "otto"))
+        with open(os.path.join(d.name, "otto", "backup.toml"), "w") as f:
             f.write('repository = "/run/media/jb/Disque/restic"\npaths = ["~/Documents"]\nexclude = ["*.tmp"]\nkeep_daily = 7\n')
         self.events = []
         for p in (mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": d.name, "RESTIC_PASSWORD": "pw"}),

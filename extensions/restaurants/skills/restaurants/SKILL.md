@@ -1,10 +1,10 @@
 ---
 name: restaurants
-description: Use to find a restaurant: near a place, by cuisine, open now; ratings, hours, phone, and how to book a table ("un bon italien ce soir à Nice", "réserve chez Mario"). Samantha never books herself.
+description: Use to find a restaurant: near a place, by cuisine, open now; ratings, hours, phone, and how to book a table ("un bon italien ce soir à Nice", "réserve chez Mario"). Otto never books herself.
 ---
 # Restaurants
 
-Samantha finds and compares; the user books (a page you open, or a number they call).
+Otto finds and compares; the user books (a page you open, or a number they call).
 
 - `restaurants.search {near, query?, open_now?, limit?}` → `{results: [{id, name, address, cuisine, rating?, reviews?, price?, open_now?, phone?, website?, maps_url}], errors?}`. `near` is required: a city, a neighbourhood or an address. When the user doesn't say where, use their city (the weather extension's default place, or ask).
 - `restaurants.details {id}`: hours, phone, website, map, rating, a few reviews, whether it takes reservations.

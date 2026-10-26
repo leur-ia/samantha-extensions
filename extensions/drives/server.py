@@ -39,7 +39,7 @@ def run(*argv):
         if "target is busy" in err or "busy" in err.lower():
             raise Failure("Le disque est encore utilisé (un fichier ouvert, un terminal dedans ?)")
         if "Not authorized" in err:
-            raise Failure("Le système refuse cette action à Samantha (droits polkit)")
+            raise Failure("Le système refuse cette action à Otto (droits polkit)")
         raise Failure(f"{argv[0]}: {err[:200] or 'échec'}")
     return r.stdout
 
@@ -114,7 +114,7 @@ def unmount(args):
 # --- plug events -------------------------------------------------------------------
 
 def publish(kind, data):
-    path, token = os.environ.get("SAMANTHA_SOCKET"), os.environ.get("SAMANTHA_EXTENSION_TOKEN")
+    path, token = os.environ.get("OTTO_SOCKET"), os.environ.get("OTTO_EXTENSION_TOKEN")
     if not path or not token:
         return
     try:
@@ -201,7 +201,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-drives", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-drives", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":
@@ -215,7 +215,7 @@ def handle(msg):
 
 
 def main():
-    if os.environ.get("SAMANTHA_SOCKET"):
+    if os.environ.get("OTTO_SOCKET"):
         threading.Thread(target=watch_forever, daemon=True).start()
     for line in sys.stdin:
         if not line.strip():

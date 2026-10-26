@@ -2,7 +2,7 @@
 """MCP stdio server of the `home-assistant` extension (stdlib only).
 
 The user's Home Assistant through its REST API: the address in
-~/.config/samantha/home-assistant.toml (`url = "http://homeassistant.local:8123"`), a
+~/.config/otto/home-assistant.toml (`url = "http://homeassistant.local:8123"`), a
 long-lived access token in HA_TOKEN (Secret Service item `home-assistant`). Everyday
 controls (lights, switches, fans, blinds, climate, media players, scenes) are one tool;
 anything else (locks, alarm, garage doors, scripts) goes through `call_service`, which
@@ -37,9 +37,9 @@ ACTIONS = {
 # Covers that guard the house are confirmed through call_service.
 GUARDING = {"garage", "gate", "door"}
 SETUP = ("Home Assistant n'est pas configuré: écris url = \"http://homeassistant.local:8123\" "
-         "dans ~/.config/samantha/home-assistant.toml, crée un jeton d'accès longue durée "
+         "dans ~/.config/otto/home-assistant.toml, crée un jeton d'accès longue durée "
          "(profil Home Assistant > Sécurité) et enregistre-le avec "
-         "`samantha provider set-key home-assistant`.")
+         "`otto provider set-key home-assistant`.")
 
 
 class Failure(Exception):
@@ -49,7 +49,7 @@ class Failure(Exception):
 def config():
     home = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
     try:
-        with open(os.path.join(home, "samantha", "home-assistant.toml"), "rb") as f:
+        with open(os.path.join(home, "otto", "home-assistant.toml"), "rb") as f:
             url = tomllib.load(f).get("url")
     except (OSError, tomllib.TOMLDecodeError):
         url = None
@@ -224,7 +224,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-home-assistant", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-home-assistant", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

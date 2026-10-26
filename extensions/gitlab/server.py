@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """MCP stdio server of the `gitlab` extension (stdlib only).
 
-A provider of Samantha's `code` front: the GitLab REST API (gitlab.com, or the host in
-~/.config/samantha/gitlab.toml: `host = "https://gitlab.example.org"`) with the user's
+A provider of Otto's `code` front: the GitLab REST API (gitlab.com, or the host in
+~/.config/otto/gitlab.toml: `host = "https://gitlab.example.org"`) with the user's
 own personal access token (GITLAB_TOKEN, Secret Service item `gitlab`; scope read_api,
 or api to mark to-dos done). Methods: inbox (to-dos), reviews, mine, repos, ci,
 mark_read. Nothing is logged; no error carries the token.
@@ -22,7 +22,7 @@ TIMEOUT = 15
 PROJECT = re.compile(r"^(?!.*(^|/)\.\.?(/|$))[\w.-]+(/[\w.-]+)+$")
 KINDS = {"MergeRequest": "mr", "Issue": "issue", "Commit": "commit", "Epic": "epic", "DesignManagement::Design": "design"}
 SETUP = ("GitLab n'est pas configuré: crée un jeton d'accès personnel (GitLab > Préférences > Jetons "
-         "d'accès, portée read_api ou api) et enregistre-le avec `samantha provider set-key gitlab`.")
+         "d'accès, portée read_api ou api) et enregistre-le avec `otto provider set-key gitlab`.")
 
 _me = {}
 
@@ -34,7 +34,7 @@ class Failure(Exception):
 def host():
     home = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
     try:
-        with open(os.path.join(home, "samantha", "gitlab.toml"), "rb") as f:
+        with open(os.path.join(home, "otto", "gitlab.toml"), "rb") as f:
             h = tomllib.load(f).get("host")
     except (OSError, tomllib.TOMLDecodeError):
         h = None
@@ -160,7 +160,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-gitlab", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-gitlab", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

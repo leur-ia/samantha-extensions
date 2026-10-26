@@ -54,8 +54,8 @@ class HomeAssistant(unittest.TestCase):
     def setUp(self):
         d = tempfile.TemporaryDirectory()
         self.addCleanup(d.cleanup)
-        os.makedirs(os.path.join(d.name, "samantha"))
-        with open(os.path.join(d.name, "samantha", "home-assistant.toml"), "w") as f:
+        os.makedirs(os.path.join(d.name, "otto"))
+        with open(os.path.join(d.name, "otto", "home-assistant.toml"), "w") as f:
             f.write('url = "http://ha.local:8123/"\n')
         self.ha = HA()
         for p in (mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": d.name, "HA_TOKEN": "tok"}),

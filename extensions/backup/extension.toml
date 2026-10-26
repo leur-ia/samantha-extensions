@@ -1,10 +1,10 @@
 id = "backup"
 name = "Backup"
-version = "0.1.1"
+version = "0.1.2"
 description = "Backups with restic: back up your folders to a disk or a server, list snapshots, browse and restore files (never over the originals)."
 
 # Stdlib-only Python with restic (in the image). Settings in
-# ~/.config/samantha/backup.toml; repository password: `samantha provider set-key
+# ~/.config/otto/backup.toml; repository password: `otto provider set-key
 # backup-restic`. Reads the home folder (what it backs up); writes only to removable
 # disks (a local repository), restic's cache and ~/Restauré (restores).
 [[mcp]]

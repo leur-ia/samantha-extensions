@@ -20,7 +20,7 @@ class Osm:
         self.calls, self.busy_first = [], busy_first
 
     def __call__(self, req, timeout=None):
-        assert timeout and req.get_header("User-agent").startswith("Samantha")
+        assert timeout and req.get_header("User-agent").startswith("Otto")
         self.calls.append((req.full_url, urllib.parse.unquote_plus(req.data.decode()) if req.data else ""))
         if "nominatim" in req.full_url:
             return io.BytesIO(json.dumps([{"lat": "43.69", "lon": "7.27"}]).encode())

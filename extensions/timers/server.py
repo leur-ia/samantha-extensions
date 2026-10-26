@@ -2,7 +2,7 @@
 """MCP stdio server of the `timers` extension (stdlib only).
 
 Timers ("10 minutes", "pomodoro") and alarms ("à 7 h 30"), kept in
-~/.local/state/samantha/timers/timers.json so a restart loses none. Each running one
+~/.local/state/otto/timers/timers.json so a restart loses none. Each running one
 is an island activity (`timers.activity`); at its end the island says so, the
 freedesktop alarm sound plays (pw-play) and a `timers.done` event goes out for
 watchers. One that ended while the server was down is announced at start if it ended
@@ -21,11 +21,11 @@ import time
 import uuid
 
 PROTOCOL = "2025-06-18"
-STATE = os.path.expanduser("~/.local/state/samantha/timers/timers.json")
+STATE = os.path.expanduser("~/.local/state/otto/timers/timers.json")
 SOUND = "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"
 MAX_SECONDS = 7 * 24 * 3600
 LATE_ANNOUNCE = 3600
-FRENCH = os.environ.get("SAMANTHA_LANGUAGE", os.environ.get("LANG", "fr")).startswith("fr")
+FRENCH = os.environ.get("OTTO_LANGUAGE", os.environ.get("LANG", "fr")).startswith("fr")
 
 now = time.time  # replaced in tests
 _lock = threading.Lock()
@@ -63,7 +63,7 @@ def load():
 
 def daemon(method, params, timeout=10):
     """One request on the daemon socket under the `extension` role (best effort)."""
-    path, token = os.environ.get("SAMANTHA_SOCKET"), os.environ.get("SAMANTHA_EXTENSION_TOKEN")
+    path, token = os.environ.get("OTTO_SOCKET"), os.environ.get("OTTO_EXTENSION_TOKEN")
     if not path or not token:
         return None
     try:
@@ -239,7 +239,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-timers", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-timers", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

@@ -88,7 +88,7 @@ class Free(unittest.TestCase):
     def test_bad_arguments_and_daemon_down(self):
         self.assertTrue(call("free", {"date": "jeudi"})["isError"])
         self.assertTrue(call("free", {"from": "18:00", "to": "09:00"})["isError"])
-        with mock.patch.object(server, "daemon", mock.Mock(side_effect=server.Failure("Le démon de Samantha n'est pas joignable"))):
+        with mock.patch.object(server, "daemon", mock.Mock(side_effect=server.Failure("Le démon de Otto n'est pas joignable"))):
             self.assertIn("démon", call("free", {})["content"][0]["text"])
 
     def test_protocol(self):

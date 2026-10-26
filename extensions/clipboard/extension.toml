@@ -1,10 +1,10 @@
 id = "clipboard"
 name = "Clipboard"
-version = "0.1.1"
+version = "0.1.2"
 description = "Clipboard history: what you copied in the last 3 days, searchable, put back on the clipboard; passwords never kept."
 
 # Stdlib-only Python with wl-clipboard (in the image): `wl-paste --watch` records
-# each text copy, owner-only, in ~/.local/state/samantha/clipboard. Copies a password
+# each text copy, owner-only, in ~/.local/state/otto/clipboard. Copies a password
 # manager marks secret are never kept.
 [[mcp]]
 name = "clipboard"
@@ -13,7 +13,7 @@ args = ["server.py"]
 
 [needs]
 wayland = true
-write = ["~/.local/state/samantha/clipboard"]
+write = ["~/.local/state/otto/clipboard"]
 
 # What the user copied can be anything.
 [tools."clipboard.history"]

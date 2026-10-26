@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """MCP stdio server of the `google` extension (stdlib only).
 
-A provider (Samantha's fronts serve it) for the user's Google accounts: Gmail (`mail`),
+A provider (Otto's fronts serve it) for the user's Google accounts: Gmail (`mail`),
 Google Calendar (`calendar`), Google Contacts (`contacts`). Run as `server.py mail`,
-`server.py calendar` or `server.py contacts`. Access tokens come from Samantha's daemon
-(`oauth.token`; the user signed in with `samantha account add google`, with their own
+`server.py calendar` or `server.py contacts`. Access tokens come from Otto's daemon
+(`oauth.token`; the user signed in with `otto account add google`, with their own
 OAuth client); no password or refresh token reaches this server, and nothing is
 logged. The calendar server also announces events 10 minutes before they start
 (island activity `google.activity`, event `calendar.soon`).
@@ -38,9 +38,9 @@ TIMEOUT = 20
 MAX_LIST = 50
 MAX_BODY = 20000
 SOON_MIN = 10
-FRENCH = os.environ.get("SAMANTHA_LANGUAGE", os.environ.get("LANG", "fr")).startswith("fr")
+FRENCH = os.environ.get("OTTO_LANGUAGE", os.environ.get("LANG", "fr")).startswith("fr")
 SETUP = ("Aucun compte Google: mets le client_id de ton app dans [oauth.google] de config.toml, "
-         "puis `samantha account add google`.")
+         "puis `otto account add google`.")
 
 
 class Failure(Exception):
@@ -54,9 +54,9 @@ class Denied(Failure):
 # --- daemon and Google APIs --------------------------------------------------------
 
 def daemon(method, params, timeout=30):
-    path, token = os.environ.get("SAMANTHA_SOCKET"), os.environ.get("SAMANTHA_EXTENSION_TOKEN")
+    path, token = os.environ.get("OTTO_SOCKET"), os.environ.get("OTTO_EXTENSION_TOKEN")
     if not path or not token:
-        raise Failure("Le démon de Samantha n'est pas joignable")
+        raise Failure("Le démon de Otto n'est pas joignable")
     with socket.socket(socket.AF_UNIX) as s:
         s.settimeout(timeout)
         s.connect(path)
@@ -122,7 +122,7 @@ def api(account, method, url, body=None, query=None):
             msg = ""
         if e.code in (401, 403):
             raise Denied(f"Google refuse l'accès ({e.code}): API non activée dans ton projet Google Cloud, "
-                          f"ou consentement à renouveler (`samantha account add google`). {msg}".strip())
+                          f"ou consentement à renouveler (`otto account add google`). {msg}".strip())
         if e.code == 404:
             raise Failure("Introuvable chez Google")
         raise Failure(f"Google a refusé la requête ({e.code}): {msg}".strip())
@@ -717,7 +717,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-google", "version": "0.2.0"}}
+                  "serverInfo": {"name": "otto-google", "version": "0.2.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":
@@ -733,7 +733,7 @@ def main():
     global TOOLS
     role = sys.argv[1] if len(sys.argv) > 1 else "mail"
     TOOLS = ROLES.get(role, ROLES["mail"])
-    if role == "calendar" and os.environ.get("SAMANTHA_SOCKET"):
+    if role == "calendar" and os.environ.get("OTTO_SOCKET"):
         threading.Thread(target=remind_forever, daemon=True).start()
     for line in sys.stdin:
         if not line.strip():

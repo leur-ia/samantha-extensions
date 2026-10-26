@@ -1,9 +1,9 @@
 id = "omdb"
 name = "OMDb"
-version = "0.1.0"
+version = "0.1.1"
 description = "Movies provider: IMDb, Rotten Tomatoes and Metacritic ratings, search and details (OMDb API, your own key)."
 
-# Stdlib-only Python on omdbapi.com. Key: `samantha provider set-key omdb`.
+# Stdlib-only Python on omdbapi.com. Key: `otto provider set-key omdb`.
 [[mcp]]
 name = "omdb"
 command = "python3"

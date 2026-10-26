@@ -1,6 +1,6 @@
 id = "rclone"
 name = "rclone"
-version = "0.1.0"
+version = "0.1.1"
 description = "Files provider for every rclone remote (Google Drive, Dropbox, OneDrive, kDrive/WebDAV, S3…): browse, search, download, upload."
 
 # Stdlib-only Python driving rclone (in the image). Remotes are added once with

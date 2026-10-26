@@ -40,7 +40,7 @@ def run(*argv):
     if r.returncode != 0:
         err = (r.stderr or r.stdout).strip()
         if "Access denied" in err or "not authorized" in err.lower():
-            raise Failure("Le système refuse cette action à Samantha (droits polkit)")
+            raise Failure("Le système refuse cette action à Otto (droits polkit)")
         raise Failure(f"{argv[0]}: {err[:200] or 'échec'}")
     return r.stdout
 
@@ -210,7 +210,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-power", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-power", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

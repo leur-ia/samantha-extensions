@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MCP stdio server of the `duffel` extension (stdlib only).
 
-A provider of Samantha's `flights` front: the Duffel API (duffel.com, the user's own
+A provider of Otto's `flights` front: the Duffel API (duffel.com, the user's own
 access token: DUFFEL_TOKEN, Secret Service item `duffel`). Searching is free; this
 server never books: details carry a link to finish on Google Flights. Methods: places,
 search, details. A test token (duffel_test_…) answers with Duffel's sandbox airline.
@@ -25,7 +25,7 @@ DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 OFFER = re.compile(r"^off_[A-Za-z0-9]+$")
 CABINS = ("economy", "premium_economy", "business", "first")
 SETUP = ("Duffel n'est pas configuré: crée un compte sur duffel.com, copie un jeton d'accès "
-         "(Developers > Access tokens) et enregistre-le avec `samantha provider set-key duffel`.")
+         "(Developers > Access tokens) et enregistre-le avec `otto provider set-key duffel`.")
 
 
 class Failure(Exception):
@@ -191,7 +191,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-duffel", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-duffel", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

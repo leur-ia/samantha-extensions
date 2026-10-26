@@ -2,7 +2,7 @@
 """MCP stdio server of the `calendar` front (stdlib only).
 
 The front's own intelligence over its capability: `free` reads `calendar.events` from
-every provider through Samantha's daemon (`capability.call`, read methods of its own
+every provider through Otto's daemon (`capability.call`, read methods of its own
 capability only) and gives the free slots between them. No network, no files.
 """
 
@@ -14,7 +14,7 @@ import socket
 import sys
 
 PROTOCOL = "2025-06-18"
-FRENCH = os.environ.get("SAMANTHA_LANGUAGE", os.environ.get("LANG", "fr")).startswith("fr")
+FRENCH = os.environ.get("OTTO_LANGUAGE", os.environ.get("LANG", "fr")).startswith("fr")
 
 
 class Failure(Exception):
@@ -22,9 +22,9 @@ class Failure(Exception):
 
 
 def daemon(method, params, timeout=50):
-    path, token = os.environ.get("SAMANTHA_SOCKET"), os.environ.get("SAMANTHA_EXTENSION_TOKEN")
+    path, token = os.environ.get("OTTO_SOCKET"), os.environ.get("OTTO_EXTENSION_TOKEN")
     if not path or not token:
-        raise Failure("Le démon de Samantha n'est pas joignable")
+        raise Failure("Le démon de Otto n'est pas joignable")
     with socket.socket(socket.AF_UNIX) as s:
         s.settimeout(timeout)
         s.connect(path)
@@ -167,7 +167,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-calendar", "version": "0.4.0"}}
+                  "serverInfo": {"name": "otto-calendar", "version": "0.4.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

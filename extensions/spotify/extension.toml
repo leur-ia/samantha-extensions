@@ -1,6 +1,6 @@
 id = "spotify"
 name = "Spotify"
-version = "0.2.0"
+version = "0.2.1"
 description = "Spotify desktop app: what's playing, play/pause/next, open a track or artist; catalog search (official Web API)."
 
 # Stdlib-only Python, one server.py run as two servers so that local control works
@@ -13,8 +13,8 @@ args = ["server.py", "player"]
 
 # `catalog` searches the official Web API with the Client Credentials flow of the user's
 # own developer app (developer.spotify.com; since Feb 2026 the app owner needs Premium).
-# Store the keys with `samantha provider set-key spotify-client-id` and
-# `samantha provider set-key spotify-client-secret`. Until both exist this server does
+# Store the keys with `otto provider set-key spotify-client-id` and
+# `otto provider set-key spotify-client-secret`. Until both exist this server does
 # not start (only `search` is missing).
 [[mcp]]
 name = "catalog"

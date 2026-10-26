@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MCP stdio server of the `google-places` extension (stdlib only).
 
-A provider of Samantha's `restaurants` front: Google's Places API (New), with the
+A provider of Otto's `restaurants` front: Google's Places API (New), with the
 user's own API key (GOOGLE_PLACES_KEY, Secret Service item `google-places`; Places API
 (New) enabled in their Google Cloud project). Methods: search, details, booking.
 Only the fields used are requested (field masks), which keeps calls cheap.
@@ -20,7 +20,7 @@ PROTOCOL = "2025-06-18"
 API = "https://places.googleapis.com/v1"
 TIMEOUT = 10
 ID = re.compile(r"^[A-Za-z0-9_-]{10,300}$")
-LANG = os.environ.get("SAMANTHA_LANGUAGE", "fr")[:2]
+LANG = os.environ.get("OTTO_LANGUAGE", "fr")[:2]
 PRICE = {"PRICE_LEVEL_FREE": "gratuit", "PRICE_LEVEL_INEXPENSIVE": "€", "PRICE_LEVEL_MODERATE": "€€",
          "PRICE_LEVEL_EXPENSIVE": "€€€", "PRICE_LEVEL_VERY_EXPENSIVE": "€€€€"}
 SEARCH_FIELDS = ",".join("places." + f for f in (
@@ -34,7 +34,7 @@ DETAIL_FIELDS = ",".join((
     "editorialSummary", "servesVegetarianFood", "outdoorSeating", "reviews"))
 SETUP = ("Google Places n'est pas configuré: dans ton projet Google Cloud, active « Places API (New) », "
          "crée une clé d'API (restreinte à cette API) et enregistre-la avec "
-         "`samantha provider set-key google-places`.")
+         "`otto provider set-key google-places`.")
 
 
 class Failure(Exception):
@@ -155,7 +155,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-google-places", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-google-places", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

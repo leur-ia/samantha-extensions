@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MCP stdio server of the `backup` extension (stdlib only).
 
-Backups with restic (in the image). ~/.config/samantha/backup.toml:
+Backups with restic (in the image). ~/.config/otto/backup.toml:
 
     repository = "/run/media/jb/Disque/restic"   # or sftp:host:/path, rest:https://…
     paths = ["~/Documents", "~/Images", "~/.config"]
@@ -29,8 +29,8 @@ PROTOCOL = "2025-06-18"
 TIMEOUT = 120
 RESTORED = os.path.expanduser("~/Restauré")
 SNAPSHOT = re.compile(r"^(latest|[0-9a-f]{8,64})$")
-SETUP = ("La sauvegarde n'est pas configurée: écris ~/.config/samantha/backup.toml (repository, "
-         "paths), enregistre le mot de passe du dépôt avec `samantha provider set-key backup-restic`, "
+SETUP = ("La sauvegarde n'est pas configurée: écris ~/.config/otto/backup.toml (repository, "
+         "paths), enregistre le mot de passe du dépôt avec `otto provider set-key backup-restic`, "
          "puis crée le dépôt (backup.init).")
 
 _lock = threading.Lock()
@@ -44,7 +44,7 @@ class Failure(Exception):
 def config():
     home = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
     try:
-        with open(os.path.join(home, "samantha", "backup.toml"), "rb") as f:
+        with open(os.path.join(home, "otto", "backup.toml"), "rb") as f:
             c = tomllib.load(f)
     except FileNotFoundError:
         raise Failure(SETUP)
@@ -78,7 +78,7 @@ def restic(c, *args, timeout=TIMEOUT):
 
 
 def daemon_publish(kind, data):
-    path, token = os.environ.get("SAMANTHA_SOCKET"), os.environ.get("SAMANTHA_EXTENSION_TOKEN")
+    path, token = os.environ.get("OTTO_SOCKET"), os.environ.get("OTTO_EXTENSION_TOKEN")
     if not path or not token:
         return
     try:
@@ -239,7 +239,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-backup", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-backup", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

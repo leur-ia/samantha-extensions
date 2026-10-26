@@ -1,6 +1,6 @@
 id = "system"
 name = "System"
-version = "0.1.1"
+version = "0.1.2"
 description = "What the computer is doing: load, memory, disks, temperatures, busiest processes, open ports, failed services, recent errors, system image updates."
 
 # Stdlib-only Python reading /proc and /sys; systemctl, journalctl and rpm-ostree for

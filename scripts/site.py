@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The registry's website, built from index/*.toml: one card per extension with what
 it does, its ready-made setups (recipes), its tools and its sandbox, read from the
-manifest at the newest release's pinned commit, the one Samantha installs.
+manifest at the newest release's pinned commit, the one Otto installs.
 
     python3 scripts/site.py [out_dir]     # default _site; needs git and full history
 
@@ -69,13 +69,13 @@ def card(id_, index, m, release):
   {f'<h3>Ready-made</h3><ul class="recipes">{recipes}</ul>' if recipes else ''}
   {f'<details><summary>{len(tools)} tools</summary><ul class="tools">{tool_rows}</ul></details>' if tools else ''}
   <p class="sandbox">{e(' · '.join(sandbox) or 'no network, no home access')}</p>
-  <code>samantha extension install {e(id_)}</code>
+  <code>otto extension install {e(id_)}</code>
 </article>"""
 
 
 PAGE = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Samantha extensions</title>
+<title>Otto extensions</title>
 <style>
 :root {{ --bg: #fbfaf7; --card: #fff; --text: #1d1c1a; --muted: #6b6760; --line: #e6e2da; --accent: #8a4b2a; }}
 @media (prefers-color-scheme: dark) {{ :root {{ --bg: #161514; --card: #1f1e1c; --text: #ece9e3; --muted: #a29d94; --line: #34312d; --accent: #e0a07c; }} }}
@@ -97,8 +97,8 @@ p {{ margin: 0; }} ul {{ margin: 0; padding-left: 18px; }}
 code {{ font-size: 13px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; overflow-wrap: anywhere; margin-top: auto; }}
 </style></head>
 <body><main>
-<h1>Samantha extensions</h1>
-<p class="lede">{count} extensions for <a href="https://gitlab.com/jeanbaptiste2/samantha">Samantha</a>. Each install fetches the pinned commit shown here, then asks you after showing its tools and sandbox. Or just ask Samantha: “installe l'extension spotify”.</p>
+<h1>Otto extensions</h1>
+<p class="lede">{count} extensions for <a href="https://gitlab.com/jeanbaptiste2/otto">Otto</a>. Each install fetches the pinned commit shown here, then asks you after showing its tools and sandbox. Or just ask Otto: “installe l'extension spotify”.</p>
 <input type="search" placeholder="Search: mail, music, calendar, every morning…" aria-label="Search extensions" oninput="filter(this.value)">
 <div class="grid">
 {cards}

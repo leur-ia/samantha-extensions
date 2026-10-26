@@ -33,7 +33,7 @@ class Failure(Exception):
 
 NO_TOKEN = ("Pas de jeton Notion. L'utilisateur doit créer une intégration interne sur "
             "https://www.notion.so/profile/integrations (jeton « ntn_… »), la "
-            "stocker avec `samantha provider set-key notion`, puis partager les pages "
+            "stocker avec `otto provider set-key notion`, puis partager les pages "
             "voulues avec l'intégration (menu ••• de la page > Connexions).")
 NOT_FOUND = ("Notion ne trouve pas cet objet: soit l'id est faux, soit la page ou la base "
              "n'est pas partagée avec l'intégration (menu ••• de la page > Connexions > "
@@ -74,7 +74,7 @@ def api(method, path, body=None, query=None, retry=True):
             raise Failure(NOT_FOUND)
         if code == "unauthorized" or e.code == 401:
             raise Failure("Notion refuse le jeton (invalide ou révoqué): l'utilisateur doit "
-                          "le recréer et le stocker avec `samantha provider set-key notion`.")
+                          "le recréer et le stocker avec `otto provider set-key notion`.")
         if code == "restricted_resource" or e.code == 403:
             raise Failure(f"L'intégration n'a pas le droit de faire cela: {message} "
                           "(vérifier ses capacités sur notion.so/profile/integrations).")
@@ -424,7 +424,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-notion", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-notion", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

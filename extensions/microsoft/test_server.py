@@ -161,7 +161,7 @@ class Microsoft(unittest.TestCase):
     def test_errors(self):
         self.use(server.MAIL)
         self.f.accounts = []
-        self.assertIn("samantha account add microsoft", call("list", {})["content"][0]["text"])
+        self.assertIn("otto account add microsoft", call("list", {})["content"][0]["text"])
         self.f.accounts = ["me@outlook.com"]
         denied = lambda req, timeout=None: (_ for _ in ()).throw(urllib.error.HTTPError(req.full_url, 403, "no", {}, io.BytesIO(b'{"error": {"message": "Access is denied."}}')))
         with mock.patch("urllib.request.urlopen", denied):

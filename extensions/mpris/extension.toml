@@ -1,6 +1,6 @@
 id = "mpris"
 name = "MPRIS players"
-version = "0.1.0"
+version = "0.1.1"
 description = "Media provider for every MPRIS player on the desktop (Spotify, browsers, YouTube Music, VLC…): players, control, volume."
 
 # Stdlib-only Python driving MPRIS players on the session bus with `busctl --user`.

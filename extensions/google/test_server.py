@@ -184,7 +184,7 @@ class Google(unittest.TestCase):
     def test_no_account(self):
         self.role("mail")
         with mock.patch.object(server, "daemon", lambda m, p, timeout=30: {"accounts": []}):
-            self.assertIn("samantha account add google", call("list", {})["content"][0]["text"])
+            self.assertIn("otto account add google", call("list", {})["content"][0]["text"])
 
     def test_protocol(self):
         self.assertEqual(list(server.ROLES["mail"]), ["accounts", "list", "search", "read", "mark_read", "draft", "send"])

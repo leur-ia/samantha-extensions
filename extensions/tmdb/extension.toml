@@ -1,10 +1,10 @@
 id = "tmdb"
 name = "TMDB"
-version = "0.1.0"
+version = "0.1.1"
 description = "Movies provider: search, details, trends, TMDB rating and where to watch (The Movie Database API, your own token; JustWatch data)."
 
 # Stdlib-only Python on api.themoviedb.org with your API read access token:
-# `samantha provider set-key tmdb`. Not endorsed or certified by TMDB.
+# `otto provider set-key tmdb`. Not endorsed or certified by TMDB.
 [[mcp]]
 name = "tmdb"
 command = "python3"

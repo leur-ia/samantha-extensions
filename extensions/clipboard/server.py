@@ -2,7 +2,7 @@
 """MCP stdio server of the `clipboard` extension (stdlib only).
 
 Clipboard history: `wl-paste --watch` runs `server.py record` at each copy, which
-appends the text to ~/.local/state/samantha/clipboard/history.jsonl (owner-only,
+appends the text to ~/.local/state/otto/clipboard/history.jsonl (owner-only,
 200 entries, 3 days). What a password manager copies (it marks it
 `x-kde-passwordManagerHint`) is never kept, nor anything that isn't text. Tools read
 the history and put an entry back on the clipboard (`wl-copy`). Nothing is logged.
@@ -16,7 +16,7 @@ import threading
 import time
 
 PROTOCOL = "2025-06-18"
-DIR = os.path.expanduser("~/.local/state/samantha/clipboard")
+DIR = os.path.expanduser("~/.local/state/otto/clipboard")
 HISTORY = os.path.join(DIR, "history.jsonl")
 KEEP = 200
 KEEP_DAYS = 3
@@ -162,7 +162,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-clipboard", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-clipboard", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

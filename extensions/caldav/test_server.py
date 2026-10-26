@@ -131,8 +131,8 @@ class CalDav(unittest.TestCase):
     def setUp(self):
         d = tempfile.TemporaryDirectory()
         self.addCleanup(d.cleanup)
-        os.makedirs(os.path.join(d.name, "samantha"))
-        with open(os.path.join(d.name, "samantha", "calendar.toml"), "w") as f:
+        os.makedirs(os.path.join(d.name, "otto"))
+        with open(os.path.join(d.name, "otto", "calendar.toml"), "w") as f:
             f.write('[accounts.ik]\nurl = "https://dav.example/"\nuser = "me"\n')
         self.srv = Server()
         server._calendars.clear()

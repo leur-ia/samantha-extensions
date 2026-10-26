@@ -1,6 +1,6 @@
 id = "power"
 name = "Power"
-version = "0.1.1"
+version = "0.1.2"
 description = "Battery, power profile (saver/balanced/performance), screen brightness, lock, suspend or hibernate now or later."
 
 # Stdlib-only Python: UPower, power-profiles-daemon and logind on the system bus

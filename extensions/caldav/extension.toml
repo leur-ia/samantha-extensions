@@ -1,11 +1,11 @@
 id = "caldav"
 name = "CalDAV calendars"
-version = "0.3.0"
+version = "0.3.1"
 description = "Calendar provider for CalDAV accounts (Infomaniak, Zoho, Fastmail, Nextcloud…) and iCal feeds: the calendar capability's methods; reminders before events."
 
-# Stdlib-only Python. Accounts in ~/.config/samantha/calendar.toml; each password or
+# Stdlib-only Python. Accounts in ~/.config/otto/calendar.toml; each password or
 # secret feed address is the Secret Service item calendar-<account>
-# (`samantha provider set-key calendar-<account>`), asked of the daemon at use.
+# (`otto provider set-key calendar-<account>`), asked of the daemon at use.
 [[mcp]]
 name = "caldav"
 command = "python3"
@@ -20,7 +20,7 @@ methods = ["events", "calendars", "create", "update", "delete"]
 
 [needs]
 network = true
-read = ["~/.config/samantha/calendar.toml"]
+read = ["~/.config/otto/calendar.toml"]
 secrets = ["calendar-*"]
 
 # 10 minutes before an event: an island activity and an event for watchers.

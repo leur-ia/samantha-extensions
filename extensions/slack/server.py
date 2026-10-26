@@ -27,7 +27,7 @@ SETUP = ("Slack n'est pas configuré: crée une app interne sur api.slack.com/ap
          "les scopes utilisateur channels:read groups:read im:read mpim:read "
          "channels:history groups:history im:history mpim:history users:read search:read "
          "chat:write reactions:write, installe-la dans ton espace de travail, puis "
-         "enregistre le User OAuth Token (xoxp-…) avec `samantha provider set-key slack`.")
+         "enregistre le User OAuth Token (xoxp-…) avec `otto provider set-key slack`.")
 CHANNEL_ID = re.compile(r"^[CGD][A-Z0-9]{6,}$")
 TS = re.compile(r"^\d{9,}\.\d{1,9}$")
 
@@ -303,7 +303,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-slack", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-slack", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

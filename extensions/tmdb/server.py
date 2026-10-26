@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """MCP stdio server of the `tmdb` extension (stdlib only).
 
-A provider of Samantha's `movies` front: The Movie Database API (themoviedb.org, the
+A provider of Otto's `movies` front: The Movie Database API (themoviedb.org, the
 user's own API read access token: TMDB_TOKEN, Secret Service item `tmdb`), in the
-user's language and country (SAMANTHA_LANGUAGE). Methods: search, ratings, details,
+user's language and country (OTTO_LANGUAGE). Methods: search, ratings, details,
 trending, watch (where to watch, data from JustWatch). Ids: `movie/603`, `tv/1399`.
 This product uses the TMDB API but is not endorsed or certified by TMDB.
 """
@@ -20,11 +20,11 @@ PROTOCOL = "2025-06-18"
 API = "https://api.themoviedb.org/3"
 TIMEOUT = 10
 ID = re.compile(r"^(movie|tv)/\d{1,9}$")
-LANG = os.environ.get("SAMANTHA_LANGUAGE", "fr")[:2]
+LANG = os.environ.get("OTTO_LANGUAGE", "fr")[:2]
 LANGUAGE, REGION = {"fr": ("fr-FR", "FR"), "en": ("en-US", "US"), "de": ("de-DE", "DE"),
                     "es": ("es-ES", "ES"), "it": ("it-IT", "IT")}.get(LANG, ("en-US", "US"))
 SETUP = ("TMDB n'est pas configuré: crée un compte sur themoviedb.org, copie le « jeton d'accès en "
-         "lecture » (Paramètres > API) et enregistre-le avec `samantha provider set-key tmdb`.")
+         "lecture » (Paramètres > API) et enregistre-le avec `otto provider set-key tmdb`.")
 
 
 class Failure(Exception):
@@ -178,7 +178,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-tmdb", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-tmdb", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

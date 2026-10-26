@@ -36,7 +36,7 @@ def run(*args):
             raise Failure("Ce VPN demande un mot de passe non enregistré: connecte-le une fois depuis les "
                           "réglages réseau en cochant « enregistrer le mot de passe ».")
         if "Not authorized" in err:
-            raise Failure("Le système refuse cette action à Samantha (droits polkit)")
+            raise Failure("Le système refuse cette action à Otto (droits polkit)")
         raise Failure(f"NetworkManager: {err[:200] or 'échec'}")
     return r.stdout
 
@@ -127,7 +127,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-vpn", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-vpn", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

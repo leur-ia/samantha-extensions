@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MCP stdio server of the `calendar` extension (stdlib only).
 
-Calendars in ~/.config/samantha/calendar.toml:
+Calendars in ~/.config/otto/calendar.toml:
 
     [accounts.ik]                       # CalDAV (Infomaniak, Zoho, Fastmail, Nextcloud…)
     url = "https://sync.infomaniak.com" # the server; its calendars are discovered
@@ -39,7 +39,7 @@ TIMEOUT = 15
 SOON_MIN = 10
 UTC = datetime.timezone.utc
 NS = {"d": "DAV:", "c": "urn:ietf:params:xml:ns:caldav"}
-FRENCH = os.environ.get("SAMANTHA_LANGUAGE", os.environ.get("LANG", "fr")).startswith("fr")
+FRENCH = os.environ.get("OTTO_LANGUAGE", os.environ.get("LANG", "fr")).startswith("fr")
 WEEKDAYS = {"MO": 0, "TU": 1, "WE": 2, "TH": 3, "FR": 4, "SA": 5, "SU": 6}
 
 
@@ -56,7 +56,7 @@ def now():
 def accounts():
     home = os.environ.get("XDG_CONFIG_HOME") or os.path.expanduser("~/.config")
     try:
-        with open(os.path.join(home, "samantha", "calendar.toml"), "rb") as f:
+        with open(os.path.join(home, "otto", "calendar.toml"), "rb") as f:
             raw = tomllib.load(f).get("accounts") or {}
     except FileNotFoundError:
         raw = {}
@@ -73,16 +73,16 @@ def accounts():
                      "user": str(a.get("user", ""))}
     if not out:
         raise Failure("Aucun calendrier configuré: ajoute un compte dans "
-                      "~/.config/samantha/calendar.toml ([accounts.<nom>] url, user pour CalDAV, "
+                      "~/.config/otto/calendar.toml ([accounts.<nom>] url, user pour CalDAV, "
                       "ou kind = \"ics\" pour une adresse iCal), puis enregistre son mot de passe "
-                      "ou son adresse secrète avec `samantha provider set-key calendar-<nom>`.")
+                      "ou son adresse secrète avec `otto provider set-key calendar-<nom>`.")
     return out
 
 
 def daemon(method, params, timeout=10):
-    path, token = os.environ.get("SAMANTHA_SOCKET"), os.environ.get("SAMANTHA_EXTENSION_TOKEN")
+    path, token = os.environ.get("OTTO_SOCKET"), os.environ.get("OTTO_EXTENSION_TOKEN")
     if not path or not token:
-        raise Failure("Le démon de Samantha n'est pas joignable")
+        raise Failure("Le démon de Otto n'est pas joignable")
     with socket.socket(socket.AF_UNIX) as s:
         s.settimeout(timeout)
         s.connect(path)
@@ -109,7 +109,7 @@ def secret(account):
         try:
             _secrets[name] = daemon("secrets.get", {"name": name})["value"]
         except Failure:
-            raise Failure(f"Secret {name} absent: `samantha provider set-key {name}`")
+            raise Failure(f"Secret {name} absent: `otto provider set-key {name}`")
     return _secrets[name]
 
 
@@ -123,7 +123,7 @@ def publish(kind, data):
 # --- HTTP / CalDAV -------------------------------------------------------------------
 
 def request(account, method, url, body=None, headers=None, depth=None):
-    h = {"User-Agent": "Samantha calendar/0.1", **(headers or {})}
+    h = {"User-Agent": "Otto calendar/0.1", **(headers or {})}
     if account["kind"] == "caldav":
         cred = base64.b64encode(f"{account['user']}:{secret(account)}".encode()).decode()
         h["Authorization"] = f"Basic {cred}"
@@ -475,10 +475,10 @@ def create(args):
     url, cal = next(((u, n) for u, n in cals if want and want in n.lower()), cals[0] if cals else (None, None))
     if not url:
         raise Failure(f"{account['name']}: aucun calendrier trouvé")
-    uid = f"{uuid.uuid4()}@samantha"
+    uid = f"{uuid.uuid4()}@otto"
     fmt = lambda t: t.astimezone(UTC).strftime("%Y%m%dT%H%M%SZ")
     body = "\r\n".join([
-        "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Samantha//calendar//FR", "BEGIN:VEVENT",
+        "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Otto//calendar//FR", "BEGIN:VEVENT",
         f"UID:{uid}", f"DTSTAMP:{fmt(now())}", f"DTSTART:{fmt(start)}",
         f"DTEND:{fmt(start + datetime.timedelta(minutes=minutes))}", f"SUMMARY:{ics_text(title)}",
         *( [f"LOCATION:{ics_text(args['location'])}"] if args.get("location") else []),
@@ -669,7 +669,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-calendar", "version": "0.3.0"}}
+                  "serverInfo": {"name": "otto-calendar", "version": "0.3.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":
@@ -683,7 +683,7 @@ def handle(msg):
 
 
 def main():
-    if os.environ.get("SAMANTHA_SOCKET"):
+    if os.environ.get("OTTO_SOCKET"):
         threading.Thread(target=remind_forever, daemon=True).start()
     for line in sys.stdin:
         if not line.strip():

@@ -1,9 +1,9 @@
 id = "media"
 name = "Media"
-version = "0.2.1"
+version = "0.2.2"
 description = "Music, radio and everything playing, whatever the provider (MPRIS players, Spotify, radio…): what's playing, play/pause/next, volume, find and play something."
 
-# The media front (docs/plans/providers.md in Samantha): served by Samantha's daemon
+# The media front (docs/plans/providers.md in Otto): served by Otto's daemon
 # from every provider of `media` (mpris, spotify, radio…), merged or routed by the
 # provider prefix of players and ids.
 capability = "capability.json"

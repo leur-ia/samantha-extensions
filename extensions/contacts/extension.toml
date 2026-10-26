@@ -1,7 +1,7 @@
 id = "contacts"
 name = "Contacts"
-version = "0.2.1"
+version = "0.2.2"
 description = "The user's address book across providers (Google…): find someone's address or phone number."
 
-# The contacts front: Samantha's daemon serves it from every provider of `contacts`.
+# The contacts front: Otto's daemon serves it from every provider of `contacts`.
 capability = "capability.json"

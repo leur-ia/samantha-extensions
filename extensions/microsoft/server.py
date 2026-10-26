@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """MCP stdio server of the `microsoft` extension (stdlib only).
 
-A provider (Samantha's fronts serve it): Outlook mail and calendar of the user's
+A provider (Otto's fronts serve it): Outlook mail and calendar of the user's
 Microsoft accounts (Outlook.com, Hotmail, Microsoft 365) through Microsoft Graph.
 Run as `server.py mail` or `server.py calendar`: the methods of that capability.
-Access tokens come from Samantha's daemon (`oauth.token`, the user signed in with
-`samantha account add microsoft`); this server never sees a password or refresh
+Access tokens come from Otto's daemon (`oauth.token`, the user signed in with
+`otto account add microsoft`); this server never sees a password or refresh
 token, and logs nothing.
 
 Ids carry their account: `me@outlook.com/AAMkAG…` (an address has no `/`).
@@ -26,9 +26,9 @@ GRAPH = "https://graph.microsoft.com/v1.0"
 TIMEOUT = 20
 MAX_LIST = 50
 MAX_BODY = 20000
-FRENCH = os.environ.get("SAMANTHA_LANGUAGE", os.environ.get("LANG", "fr")).startswith("fr")
+FRENCH = os.environ.get("OTTO_LANGUAGE", os.environ.get("LANG", "fr")).startswith("fr")
 SETUP = ("Aucun compte Microsoft: enregistre ton app (client_id dans [oauth.microsoft] de "
-         "config.toml), puis `samantha account add microsoft`.")
+         "config.toml), puis `otto account add microsoft`.")
 
 
 class Failure(Exception):
@@ -38,9 +38,9 @@ class Failure(Exception):
 # --- daemon and Graph --------------------------------------------------------------
 
 def daemon(method, params, timeout=30):
-    path, token = os.environ.get("SAMANTHA_SOCKET"), os.environ.get("SAMANTHA_EXTENSION_TOKEN")
+    path, token = os.environ.get("OTTO_SOCKET"), os.environ.get("OTTO_EXTENSION_TOKEN")
     if not path or not token:
-        raise Failure("Le démon de Samantha n'est pas joignable")
+        raise Failure("Le démon de Otto n'est pas joignable")
     with socket.socket(socket.AF_UNIX) as s:
         s.settimeout(timeout)
         s.connect(path)
@@ -84,7 +84,7 @@ def graph(account, method, path, body=None, headers=None, query=None):
             msg = ""
         if e.code in (401, 403):
             raise Failure(f"Microsoft refuse l'accès ({e.code}): permission manquante ou consentement "
-                          f"à renouveler (`samantha account add microsoft`). {msg}".strip())
+                          f"à renouveler (`otto account add microsoft`). {msg}".strip())
         if e.code == 404:
             raise Failure("Introuvable chez Microsoft")
         raise Failure(f"Microsoft Graph a refusé la requête ({e.code}): {msg}".strip())
@@ -576,7 +576,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-microsoft", "version": "0.2.0"}}
+                  "serverInfo": {"name": "otto-microsoft", "version": "0.2.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

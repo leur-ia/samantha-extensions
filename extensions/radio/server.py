@@ -22,7 +22,7 @@ PROTOCOL = "2025-06-18"
 MIRRORS = ["https://all.api.radio-browser.info", "https://de1.api.radio-browser.info",
            "https://fi1.api.radio-browser.info"]
 TIMEOUT = 8
-AGENT = "Samantha/0.1 (radio extension)"
+AGENT = "Otto/0.1 (radio extension)"
 PLAYER = ["ffplay", "-nodisp", "-autoexit", "-loglevel", "quiet"]
 
 _lock = threading.Lock()
@@ -75,7 +75,7 @@ def search(args):
 
 def daemon_publish(data):
     """The island activity, through the daemon (best effort)."""
-    path, token = os.environ.get("SAMANTHA_SOCKET"), os.environ.get("SAMANTHA_EXTENSION_TOKEN")
+    path, token = os.environ.get("OTTO_SOCKET"), os.environ.get("OTTO_EXTENSION_TOKEN")
     if not path or not token:
         return
     try:
@@ -231,7 +231,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-radio", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-radio", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

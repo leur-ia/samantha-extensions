@@ -20,7 +20,7 @@ import urllib.request
 PROTOCOL = "2025-06-18"
 API = "https://discord.com/api/v10"
 TIMEOUT = 10
-USER_AGENT = "DiscordBot (https://gitlab.com/jeanbaptiste2/samantha, 0.1.0)"
+USER_AGENT = "DiscordBot (https://gitlab.com/jeanbaptiste2/otto, 0.1.0)"
 MAX_SEND = 2000
 TEXT_TYPES = {0: "text", 5: "announcement", 15: "forum"}
 SNOWFLAKE = re.compile(r"^\d{15,22}$")
@@ -28,7 +28,7 @@ SETUP = ("Discord n'est pas configuré: crée une application sur "
          "discord.com/developers/applications, ajoute un bot, active l'intent Message "
          "Content, invite-le sur tes serveurs avec les permissions Voir les salons, Lire "
          "l'historique, Envoyer des messages et Ajouter des réactions, puis enregistre son "
-         "jeton avec `samantha provider set-key discord`. (Un jeton de compte utilisateur "
+         "jeton avec `otto provider set-key discord`. (Un jeton de compte utilisateur "
          "n'est jamais utilisé: c'est interdit par Discord.)")
 
 
@@ -224,7 +224,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-discord", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-discord", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

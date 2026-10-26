@@ -1,6 +1,6 @@
 id = "discord"
 name = "Discord"
-version = "0.1.1"
+version = "0.1.2"
 description = "Discord through the user's own bot (official API): servers, channels, recent messages, send and react."
 
 # Stdlib-only Python on the Discord REST API v10 with a BOT token of the user's own

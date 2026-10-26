@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MCP stdio server of the `osm` extension (stdlib only).
 
-A provider of Samantha's `restaurants` front from OpenStreetMap: free, no account,
+A provider of Otto's `restaurants` front from OpenStreetMap: free, no account,
 no ratings. The place is found with Nominatim, restaurants around it with Overpass,
 both used as their usage policies ask (an identifying User-Agent, a few requests at a
 time). Methods: search, details, booking. Data © OpenStreetMap contributors (ODbL).
@@ -19,7 +19,7 @@ NOMINATIM = "https://nominatim.openstreetmap.org/search"
 # Public Overpass instances, tried in turn (the main one is often busy).
 OVERPASS = ["https://overpass-api.de/api/interpreter", "https://overpass.private.coffee/api/interpreter",
             "https://maps.mail.ru/osm/tools/overpass/api/interpreter"]
-AGENT = "Samantha/0.1 (https://github.com/leur-ia/samantha-extensions; restaurants provider)"
+AGENT = "Otto/0.1 (https://github.com/leur-ia/samantha-extensions; restaurants provider)"
 TIMEOUT = 25
 RADIUS = 1500
 ID = re.compile(r"^(node|way)/\d{1,12}$")
@@ -183,7 +183,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "samantha-osm", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-osm", "version": "0.1.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":
