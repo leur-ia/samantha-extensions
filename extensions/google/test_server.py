@@ -215,6 +215,7 @@ class Google(unittest.TestCase):
             self.assertEqual((d["snippet"][:27], len(d["snippet"])), ("Votre facture d'octobre xxx", 160))
             self.assertEqual((d["labels"], d["list_unsubscribe"]), (["INBOX", "UNREAD", "CATEGORY_UPDATES"], True))
             self.assertEqual(d["url"], "https://mail.google.com/mail/u/me%40gmail.com/#all/m2")
+            self.assertEqual(d["app_url"], "googlegmail:///cv=t1/accountId=1&create-new-tab")
             self.assertNotIn("body", d)
             self.assertEqual(server.load_state(), {"me@gmail.com": "130"})
             self.f.history = None  # historyId expired: start over, nothing announced

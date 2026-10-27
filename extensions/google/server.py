@@ -384,6 +384,10 @@ def received(account, m):
                list_unsubscribe="list-unsubscribe" in h,
                # Gmail web opens a message by its API id, in the account's own session.
                url=f"https://mail.google.com/mail/u/{urllib.parse.quote(account)}/#all/{m['id']}")
+    # The Gmail app on iPhone (its undocumented thread link; at worst the app opens on
+    # its inbox): Gmail web there has no session and answers 404.
+    if m.get("threadId"):
+        out["app_url"] = f"googlegmail:///cv={m['threadId']}/accountId=1&create-new-tab"
     return out
 
 
