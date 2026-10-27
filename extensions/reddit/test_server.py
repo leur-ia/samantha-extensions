@@ -152,8 +152,18 @@ class Setup(Base):
         self.assertEqual(tok[0].get_header("Authorization"), "Basic Y2lkOnMzY3JldA==")  # cid:s3cret
         api = r.api_calls()[0]
         self.assertEqual(api.get_header("Authorization"), "bearer tok-1")
-        self.assertEqual(api.get_header("User-agent"), "linux:otto-reddit:0.1.0 (by /u/ana)")
+        self.assertEqual(api.get_header("User-agent"), "linux:otto-reddit:0.1.1 (by /u/ana)")
         self.assertTrue(api.full_url.startswith("https://oauth.reddit.com/best"))
+
+    def test_web_app_uses_the_refresh_token(self):
+        with open(os.environ["SOCIAL_CONFIG"], "a") as f:
+            f.write('\n[reddit.web]\nusername = "bo"\nclient_id = "wid"\nredirect_uri = "http://localhost:8080"\n')
+        r = Reddit({("GET", "/best"): children()})
+        with mock.patch("urllib.request.urlopen", r):
+            call("feed", {"account": "web"})
+        tok = [q for q in r.requests if "access_token" in q.full_url]
+        form = dict(urllib.parse.parse_qsl(tok[0].data.decode()))
+        self.assertEqual(form, {"grant_type": "refresh_token", "refresh_token": "pass:word"})
 
     def test_rejected_password_and_401(self):
         r, _ = self.run_with({("POST", "/api/v1/access_token"): {"error": "invalid_grant"}}, "feed", {})

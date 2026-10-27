@@ -11,6 +11,12 @@ A provider of Otto's `social` front on Reddit's official OAuth2 API. Accounts in
 The Secret Service item social-<name> holds `<client secret>:<account password>`,
 split on the first colon, asked of the daemon (`secrets.get`) at use and never
 logged. A "script" app's password grant gives a bearer token, cached until it expires.
+
+A "web app" (Reddit no longer lets everyone create script apps) adds its redirect uri,
+`redirect_uri = "http://localhost:8080"`, and signs in once in a browser:
+`python3 server.py login <name>` stores `<client secret>:<refresh token>` in the same
+item (through `otto provider set-key`, never printed); tokens then come from the
+refresh grant.
 Ids are `<account>/<fullname>` (t3_… posts, t1_… comments); the daemon adds `reddit:`.
 Failures are `isError` results, never a crash; no error carries a secret.
 """
@@ -30,6 +36,8 @@ import urllib.request
 
 PROTOCOL = "2025-06-18"
 TOKEN_URL = "https://www.reddit.com/api/v1/access_token"
+AUTHORIZE_URL = "https://www.reddit.com/api/v1/authorize"
+SCOPES = "identity read privatemessages submit vote mysubreddits"
 API = "https://oauth.reddit.com"
 SITE = "https://reddit.com"
 TIMEOUT = 15
@@ -78,7 +86,8 @@ def load_config():
         if not NAME.fullmatch(name):
             raise Failure(f"Nom de compte {name!r}: lettres minuscules, chiffres et tirets")
         accounts[name] = {"name": name, "username": str(a["username"]).removeprefix("u/"),
-                          "client_id": str(a["client_id"])}
+                          "client_id": str(a["client_id"]),
+                          "redirect_uri": str(a.get("redirect_uri") or "")}
     if not accounts:
         raise Failure(SETUP)
     return accounts
@@ -136,7 +145,7 @@ def password(acct):
 # --- HTTP -------------------------------------------------------------------------
 
 def agent(acct):
-    return f"linux:otto-reddit:0.1.0 (by /u/{acct['username']})"
+    return f"linux:otto-reddit:0.1.1 (by /u/{acct['username']})"
 
 
 def token(acct):
@@ -145,15 +154,10 @@ def token(acct):
     if cached and cached[1] > time.time():
         return cached[0]
     secret, pw = password(acct)
-    basic = base64.b64encode(f"{acct['client_id']}:{secret}".encode()).decode()
-    body = urllib.parse.urlencode({"grant_type": "password", "username": acct["username"],
-                                   "password": pw}).encode()
-    req = urllib.request.Request(TOKEN_URL, data=body, method="POST", headers={
-        "Authorization": f"Basic {basic}", "User-Agent": agent(acct),
-        "Content-Type": "application/x-www-form-urlencoded"})
+    form = ({"grant_type": "refresh_token", "refresh_token": pw} if acct["redirect_uri"]
+            else {"grant_type": "password", "username": acct["username"], "password": pw})
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
-            got = json.loads(r.read())
+        got = grant(acct, secret, form)
     except urllib.error.HTTPError as e:
         if e.code in (400, 401, 403):
             raise Failure("Reddit refuse ces identifiants. " + SETUP) from None
@@ -168,6 +172,49 @@ def token(acct):
     TOKENS[acct["name"]] = (got["access_token"],
                             time.time() + float(got.get("expires_in", 3600)) - 60)
     return got["access_token"]
+
+
+def grant(acct, secret, form):
+    """POST to the token endpoint with the app's credentials; its JSON."""
+    basic = base64.b64encode(f"{acct['client_id']}:{secret}".encode()).decode()
+    req = urllib.request.Request(TOKEN_URL, data=urllib.parse.urlencode(form).encode(),
+                                 method="POST", headers={
+        "Authorization": f"Basic {basic}", "User-Agent": agent(acct),
+        "Content-Type": "application/x-www-form-urlencoded"})
+    with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+        return json.loads(r.read())
+
+
+def login(name):
+    """`python3 server.py login <name>`, in a terminal: a web app's one sign-in."""
+    import getpass
+    import secrets
+    import subprocess
+    acct = pick(load_config(), name)
+    if not acct["redirect_uri"]:
+        sys.exit(f"[reddit.{name}] n'a pas de redirect_uri: un compte « script » n'a pas "
+                 "besoin de login (otto provider set-key social-<nom>)")
+    state = secrets.token_hex(8)
+    print("Ouvre ce lien, accepte, puis copie l'adresse de la page qui ne charge pas :\n"
+          + AUTHORIZE_URL + "?" + urllib.parse.urlencode({
+              "client_id": acct["client_id"], "response_type": "code", "state": state,
+              "redirect_uri": acct["redirect_uri"], "duration": "permanent",
+              "scope": SCOPES}) + "\n")
+    query = urllib.parse.parse_qs(urllib.parse.urlsplit(input("Adresse : ").strip()).query)
+    if query.get("state") != [state] or "code" not in query:
+        sys.exit("Connexion refusée: " + (query.get("error") or ["pas de code"])[0])
+    secret = getpass.getpass("Secret de l'app (sous son nom sur reddit.com/prefs/apps) : ")
+    try:
+        got = grant(acct, secret, {"grant_type": "authorization_code",
+                                   "code": query["code"][0],
+                                   "redirect_uri": acct["redirect_uri"]})
+    except (urllib.error.URLError, OSError, ValueError) as e:
+        sys.exit(f"Reddit a refusé l'échange ({getattr(e, 'code', e)})")
+    if not isinstance(got, dict) or not got.get("refresh_token"):
+        sys.exit("Reddit n'a pas donné de jeton: " + str((got or {}).get("error", "?")))
+    subprocess.run(["otto", "provider", "set-key", f"social-{name}"], check=True,
+                   input=f"{secret}:{got['refresh_token']}\n", text=True)
+    print(f"Compte Reddit {name} connecté: redémarre Otto (systemctl --user restart otto).")
 
 
 def note_rate(headers):
@@ -533,4 +580,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:2] == ["login"] and len(sys.argv) == 3:
+        try:
+            login(sys.argv[2])
+        except Failure as e:
+            sys.exit(str(e))
+    else:
+        main()

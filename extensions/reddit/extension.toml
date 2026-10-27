@@ -1,6 +1,6 @@
 id = "reddit"
 name = "Reddit"
-version = "0.1.0"
+version = "0.1.1"
 description = "Social provider for Reddit (official API): the front page, inbox, search by words or r/subreddit, threads, post, reply and upvote."
 
 # Stdlib-only Python on Reddit's official OAuth2 API (oauth.reddit.com), never
@@ -13,7 +13,9 @@ description = "Social provider for Reddit (official API): the front page, inbox,
 #        client_id = "the-app-client-id"
 #   3. `otto provider set-key social-perso` with `<client secret>:<account password>`
 #      (one Secret Service item, split on the first colon), asked of the daemon at use.
-# The password grant doesn't pass two-factor authentication: use an account without it.
+# The password grant does not pass two-factor authentication: use an account without it.
+# A "web app" instead (new script apps need Reddit's approval): add redirect_uri =
+# "http://localhost:8080" to the table and run `python3 server.py login <name>` once.
 [[mcp]]
 name = "reddit"
 command = "python3"
