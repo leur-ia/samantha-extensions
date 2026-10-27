@@ -17,3 +17,9 @@ version = "0.2.1"
 source = "https://github.com/leur-ia/samantha-extensions.git"
 path = "extensions/google"
 commit = "272b3ae26719e9648a16582039a636241bcb75ec"
+
+[[release]]
+version = "0.3.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/google"
+commit = "05947259f0c2a4f65f1e033bbde887de1bb0e80d"
