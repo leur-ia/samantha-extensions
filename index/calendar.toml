@@ -1,4 +1,5 @@
 description = "The user's agenda across every calendar provider (CalDAV, iCal feeds, Google, Microsoft…): what's today, this week, find an event, add, move or cancel one, free slots."
+recipes = ["Agenda du matin", "Rappel avant un rendez-vous"]
 
 [[release]]
 version = "0.1.0"
@@ -35,3 +36,9 @@ version = "0.4.2"
 source = "https://github.com/leur-ia/samantha-extensions.git"
 path = "extensions/calendar"
 commit = "272b3ae26719e9648a16582039a636241bcb75ec"
+
+[[release]]
+version = "0.5.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/calendar"
+commit = "ccb8532f66f3836a8091927978c5bacb8a101ff3"

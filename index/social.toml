@@ -1,4 +1,5 @@
 description = "The user's social networks in one place (Mastodon, Bluesky, Reddit…): their feed, notifications, search, read a thread, post, reply and like."
+recipes = ["Résumé social du soir"]
 
 [[release]]
 version = "0.1.0"
@@ -11,3 +12,9 @@ version = "0.1.1"
 source = "https://github.com/leur-ia/samantha-extensions.git"
 path = "extensions/social"
 commit = "05947259f0c2a4f65f1e033bbde887de1bb0e80d"
+
+[[release]]
+version = "0.2.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/social"
+commit = "ccb8532f66f3836a8091927978c5bacb8a101ff3"
