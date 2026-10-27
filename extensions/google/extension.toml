@@ -1,6 +1,6 @@
 id = "google"
 name = "Google"
-version = "0.3.0"
+version = "0.3.1"
 description = "Mail, calendar and contacts provider for Google accounts: Gmail, Google Calendar (Meet links, reminders), Google Contacts."
 
 # Stdlib-only Python on Google's APIs. Sign-in is Otto's: your own OAuth client

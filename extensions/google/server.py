@@ -381,7 +381,9 @@ def received(account, m):
     out.update(snippet=html.unescape(m.get("snippet") or "")[:SNIPPET],
                # System labels only (CATEGORY_PROMOTIONS…): a user label's id says nothing.
                labels=[x for x in m.get("labelIds") or [] if not x.startswith("Label_")],
-               list_unsubscribe="list-unsubscribe" in h)
+               list_unsubscribe="list-unsubscribe" in h,
+               # Gmail web opens a message by its API id, in the account's own session.
+               url=f"https://mail.google.com/mail/u/{urllib.parse.quote(account)}/#all/{m['id']}")
     return out
 
 
