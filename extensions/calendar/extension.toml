@@ -1,6 +1,6 @@
 id = "calendar"
 name = "Calendar"
-version = "0.4.2"
+version = "0.5.0"
 description = "The user's agenda across every calendar provider (CalDAV, iCal feeds, Google, Microsoft…): what's today, this week, find an event, add, move or cancel one, free slots."
 
 # The calendar front (docs/plans/providers.md in Otto): its methods are served
@@ -19,3 +19,25 @@ args = ["server.py"]
 [tools."agenda.free"]
 class = "read"
 data = "personal"
+
+[[recipe]]
+name = "agenda-morning"
+title = "Agenda du matin"
+description = "Chaque matin, tes rendez-vous du jour et le premier créneau libre, avec la météo si je l'ai."
+
+[[recipe.watch]]
+id = "calendar-morning"
+output = "notify"
+instruction = "Donne l'agenda du jour : calendar.events {days: 1}, puis agenda.free {minutes: 30} pour le premier créneau libre. Un point par rendez-vous : l'heure, le titre, le lieu ou le lien de visio ; puis le premier créneau libre. Si weather.forecast existe, ajoute la météo en une phrase (pluie, températures). Aucun rendez-vous : importance none. Sinon low, teaser : le nombre de rendez-vous et le premier (heure et titre)."
+trigger = { calendar = "*-*-* 07:45" }
+
+[[recipe]]
+name = "agenda-reminder"
+title = "Rappel avant un rendez-vous"
+description = "Un rappel une demi-heure avant chaque rendez-vous, avec le lieu et le lien de visio."
+
+[[recipe.watch]]
+id = "calendar-reminder"
+output = "notify"
+instruction = "Lance-toi tous les quarts d'heure : calendar.events {days: 1}, et garde seulement les rendez-vous (pas ceux de la journée entière) qui commencent entre 30 et 44 minutes après l'heure de l'événement qui t'a déclenché : chacun n'est rappelé qu'une fois. Aucun : importance none. Sinon normal, teaser : l'heure et le titre ; text : le lieu (l'adresse) ou le lien de visio, les participants, et le temps de trajet si un outil d'itinéraire existe."
+trigger = { calendar = "*-*-* 06..22:00/15" }

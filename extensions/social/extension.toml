@@ -1,6 +1,6 @@
 id = "social"
 name = "Social"
-version = "0.1.1"
+version = "0.2.0"
 description = "The user's social networks in one place (Mastodon, Bluesky, Reddit…): their feed, notifications, search, read a thread, post, reply and like."
 
 # The social front: Otto's daemon serves it from every provider of `social`. Each
@@ -8,3 +8,14 @@ description = "The user's social networks in one place (Mastodon, Bluesky, Reddi
 # asks the daemon for the account's secret (social-<name>). Official APIs only: X,
 # Instagram, Facebook, LinkedIn and Threads offer none for a personal account.
 capability = "capability.json"
+
+[[recipe]]
+name = "social-evening"
+title = "Résumé social du soir"
+description = "Le soir, les mentions, réponses et messages de la journée sur tes réseaux, en un seul résumé."
+
+[[recipe.watch]]
+id = "social-evening"
+output = "notify"
+instruction = "Résume la journée sur les réseaux : social.notifications {limit: 50}, garde ceux d'aujourd'hui. Un point par mention, réponse ou message : qui, sur quel réseau, ce qu'il dit en une phrase (social.thread si le contexte manque). Les likes, partages et abonnements : seulement leur nombre, en une ligne. Rien d'autre que des likes ou rien du tout : importance none. Sinon low, teaser : le nombre de mentions et réponses et qui en premier."
+trigger = { calendar = "*-*-* 19:00" }
