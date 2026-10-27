@@ -1,6 +1,6 @@
 id = "telegram"
 name = "Telegram"
-version = "0.1.0"
+version = "0.1.1"
 description = "Telegram through the user's own bot (official Bot API): chats it has seen, recent messages, send and react; new-message events."
 
 # Stdlib-only Python on the Telegram Bot API with the token of the user's own bot, from
@@ -19,10 +19,11 @@ secrets = ["telegram"]
 write = ["~/.local/state/otto/telegram"]
 
 # A new incoming message in a chat the bot is in: {chat (name), chat_id, from, text
-# (first 200 characters), id}. Not the bot's own messages, nor edits.
+# (first 200 characters), id}. Not the bot's own messages, nor edits. Triaged by default.
 [[event]]
 type = "telegram.message"
 data_class = "personal"
+signal = true
 
 [tools."telegram.chats"]
 class = "read"

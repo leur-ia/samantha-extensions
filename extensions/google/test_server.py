@@ -4,7 +4,10 @@ import base64
 import datetime
 import io
 import json
+import os
+import tempfile
 import unittest
+import urllib.error
 import urllib.parse
 from unittest import mock
 
@@ -23,6 +26,7 @@ class Fake:
     def __init__(self):
         self.requests = []
         self.scopes = [server.DIRECTORY]
+        self.history = {"historyId": "100"}
 
     def daemon(self, method, params, timeout=30):
         assert params["provider"] == "google"
@@ -37,7 +41,17 @@ class Fake:
         body = json.loads(req.data) if req.data else None
         self.requests.append((req.get_method(), u.path, q, body))
         p = u.path
-        if p.endswith("/messages") and req.get_method() == "GET":
+        if p.endswith("/profile"):
+            out = {"emailAddress": "me@gmail.com", "historyId": "100"}
+        elif p.endswith("/history"):
+            if self.history is None:
+                raise urllib.error.HTTPError(req.full_url, 404, "gone", {}, io.BytesIO(b"{}"))
+            out = self.history
+        elif "/messages/m2" in p or "/messages/m3" in p:
+            out = {**MSG, "id": p.rsplit("/", 1)[1], "snippet": "Votre facture d&#39;octobre " + "x" * 300,
+                   "labelIds": ["INBOX", "UNREAD", "CATEGORY_UPDATES", "Label_7"] + (["SENT"] if p.endswith("m3") else []),
+                   "payload": {"headers": MSG["payload"]["headers"] + [{"name": "List-Unsubscribe", "value": "<mailto:u@edf.fr>"}]}}
+        elif p.endswith("/messages") and req.get_method() == "GET":
             out = {"messages": [{"id": "18c2"}]}
         elif "/messages/18c2" in p and req.get_method() == "GET":
             out = MSG
@@ -180,6 +194,31 @@ class Google(unittest.TestCase):
         sent = self.f.requests[-1][3]
         self.assertEqual((sent["items"], sent["timeZone"]), ([{"id": "fred@corp.com"}, {"id": "out@else.com"}], "Europe/Paris"))
         self.assertTrue(call("busy", {"emails": []})["isError"])
+
+    def test_mail_received(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        events = []
+        with mock.patch.dict(os.environ, {"GOOGLE_STATE": os.path.join(tmp.name, "g", "gmail.json")}):
+            check = lambda: server.check_mail(lambda kind, data: events.append((kind, data)))
+            check()
+            self.assertEqual(events, [], "the first check only seeds")
+            self.assertEqual(server.load_state(), {"me@gmail.com": "100"})
+            self.f.history = {"historyId": "130", "history": [
+                {"messagesAdded": [{"message": {"id": "m2"}}]}, {"messagesAdded": [{"message": {"id": "m3"}}]}]}
+            check()
+            q = [r[2] for r in self.f.requests if r[1].endswith("/history")][-1]
+            self.assertEqual((q["startHistoryId"], q["labelId"]), (["100"], ["INBOX"]))
+            self.assertEqual([k for k, _ in events], ["mail.received"], "m3 is the user's own (SENT)")
+            d = events[0][1]
+            self.assertEqual((d["id"], d["from"], d["name"], d["subject"]), ("me@gmail.com/m2", "facture@edf.fr", "EDF", "Facture"))
+            self.assertEqual((d["snippet"][:27], len(d["snippet"])), ("Votre facture d'octobre xxx", 160))
+            self.assertEqual((d["labels"], d["list_unsubscribe"]), (["INBOX", "UNREAD", "CATEGORY_UPDATES"], True))
+            self.assertNotIn("body", d)
+            self.assertEqual(server.load_state(), {"me@gmail.com": "130"})
+            self.f.history = None  # historyId expired: start over, nothing announced
+            check()
+            self.assertEqual((len(events), server.load_state()), (1, {"me@gmail.com": "100"}))
 
     def test_no_account(self):
         self.role("mail")

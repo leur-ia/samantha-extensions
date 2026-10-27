@@ -1,6 +1,6 @@
 id = "gitlab"
 name = "GitLab"
-version = "0.1.1"
+version = "0.2.0"
 description = "Code provider for GitLab (gitlab.com or your own host): to-dos, reviews waiting, your merge requests, projects, pipelines (your own token)."
 
 # Stdlib-only Python on the REST API. Token: `otto provider set-key gitlab`.
@@ -14,7 +14,18 @@ secrets = { GITLAB_TOKEN = "secret:gitlab" }
 capability = "code"
 server = "gitlab"
 
+# Each new pending to-do, checked every 5 minutes: review requested, mentioned,
+# assigned, build failed, approval required… (not those the user added themselves):
+# {account, forge, reason, kind, repo, title, author, url, id, date}. What was there
+# at the first check is never announced. Triaged by default.
+[[event]]
+type = "code.notification"
+data_class = "personal"
+signal = true
+
 [needs]
 network = true
 read = ["~/.config/otto/gitlab.toml"]
 secrets = ["gitlab"]
+# The to-dos already seen (notifications.json).
+write = ["~/.local/state/otto/gitlab"]

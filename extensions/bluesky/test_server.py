@@ -152,6 +152,29 @@ class Tools(unittest.TestCase):
         r, _ = self.run_with({"app.bsky.notification.listNotifications": notes}, "notifications", {"unread": True})
         self.assertNotIn("like", [i["kind"] for i in r["structuredContent"]["items"]])
 
+    def test_notification_events_seeded_then_new_only(self):
+        old = {"notifications": [{"uri": P1, "cid": "c-aaa", "reason": "mention", "author": {"handle": "ana.bsky.social"},
+                                  "record": {"text": "vieux"}, "indexedAt": "2026-10-25T07:00:00Z"}]}
+        new = {"notifications": [
+            {"uri": "at://did:plc:ana/app.bsky.feed.like/1", "cid": "l1", "reason": "like", "reasonSubject": P1,
+             "author": {"handle": "ana.bsky.social"}, "record": {}, "indexedAt": "2026-10-25T09:00:00Z"},
+            {"uri": P2, "cid": "c-bbb", "reason": "reply", "author": {"handle": "bob.bsky.social", "displayName": "Bob"},
+             "record": {"text": "d'accord " * 40}, "indexedAt": "2026-10-25T08:00:00Z"}] + old["notifications"]}
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        events = []
+        b = Bsky({"com.atproto.server.createSession": dict(SESSION),
+                  "app.bsky.notification.listNotifications": [old, new, new]})
+        with mock.patch.dict(os.environ, {"BLUESKY_STATE": os.path.join(d.name, "b", "n.json")}), \
+                mock.patch("urllib.request.urlopen", b):
+            for _ in range(3):
+                server.check_notifications(events.append)
+        self.assertEqual(len(events), 1, "the first check seeds; likes aren't news; nothing twice")
+        e = events[0]
+        self.assertEqual((e["kind"], e["network"], e["account"], e["from"], e["id"], e["date"]),
+                         ("reply", "bluesky", "moi", "Bob", f"moi|{P2}|c-bbb", "2026-10-25T08:00:00Z"))
+        self.assertEqual((len(e["text"]), e["url"]), (200, "https://bsky.app/profile/did:plc:bob/post/3kbbb"))
+
     def test_search(self):
         r, b = self.run_with({"app.bsky.feed.searchPosts": {"posts": [view(P1, "#otto c'est bien")]}},
                              "search", {"query": "#otto", "limit": 5})

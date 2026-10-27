@@ -1,6 +1,6 @@
 id = "bluesky"
 name = "Bluesky"
-version = "0.1.0"
+version = "0.2.0"
 description = "Social provider for Bluesky (AT Protocol): timeline, notifications, search, threads, post, reply and like."
 
 # Stdlib-only Python on the AT Protocol (XRPC over HTTPS, the account's PDS).
@@ -23,10 +23,20 @@ args = ["server.py"]
 capability = "social"
 server = "bluesky"
 
+# Each new mention, reply or follow, checked every 5 minutes: {account, network, kind,
+# from, handle, text (200 characters), url, id, date}. Not likes nor reposts; what was
+# there at the first check is never announced. Triaged by default.
+[[event]]
+type = "social.notification"
+data_class = "personal"
+signal = true
+
 [needs]
 network = true
 read = ["~/.config/otto/social.toml"]
 secrets = ["social-*"]
+# The notification ids already seen, per account (notifications.json).
+write = ["~/.local/state/otto/bluesky"]
 
 [tools."bluesky.accounts"]
 class = "read"

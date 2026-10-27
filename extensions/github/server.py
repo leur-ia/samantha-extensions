@@ -10,7 +10,10 @@ mark_read. Nothing is logged; no error carries the token.
 import json
 import os
 import re
+import socket
 import sys
+import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -25,6 +28,9 @@ KINDS = {"PullRequest": "pr", "Issue": "issue", "Release": "release", "CheckSuit
 SETUP = ("GitHub n'est pas configuré: crée un jeton (github.com > Settings > Developer settings > "
          "Personal access tokens, accès notifications et dépôts en lecture) et enregistre-le avec "
          "`otto provider set-key github`.")
+
+
+_me = {}
 
 
 class Failure(Exception):
@@ -124,6 +130,114 @@ def mark_read(args):
     return {"read": tid}
 
 
+# --- code.notification events -----------------------------------------------------
+
+POLL_SECONDS = 300
+MAX_EVENTS = 10   # per check, newest kept
+KEEP = 300        # keys remembered
+
+
+def state_path():
+    # The path the sandbox grants (`[needs] write`); GITHUB_STATE for the tests.
+    return os.environ.get("GITHUB_STATE") or os.path.expanduser("~/.local/state/otto/github/notifications.json")
+
+
+def load_state():
+    try:
+        with open(state_path()) as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def save_state(data):
+    path = state_path()
+    os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+    tmp = path + ".tmp"
+    with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
+        json.dump(data, f)
+    os.replace(tmp, path)
+
+
+def daemon(method, params, timeout=5):
+    """One request on the daemon socket under the `extension` role."""
+    path, tok = os.environ.get("OTTO_SOCKET"), os.environ.get("OTTO_EXTENSION_TOKEN")
+    if not path or not tok:
+        raise Failure("Le démon de Otto n'est pas joignable")
+    with socket.socket(socket.AF_UNIX) as s:
+        s.settimeout(timeout)
+        s.connect(path)
+        f = s.makefile("rwb")
+        for frame in ({"v": 1, "kind": "hello", "role": "extension", "token": tok},
+                      {"v": 1, "kind": "request", "id": 1, "method": method, "params": params}):
+            f.write(json.dumps(frame).encode() + b"\n")
+        f.flush()
+        for line in f:
+            reply = json.loads(line)
+            if reply.get("kind") == "response" and reply.get("id") == 1:
+                if not reply.get("ok"):
+                    raise Failure(f"démon: {reply.get('error')}")
+                return reply["result"]
+    raise Failure("Le démon a fermé la connexion")
+
+
+def publish_event(data):
+    try:
+        daemon("events.publish", {"type": "code.notification", "data": data})
+    except (Failure, OSError, ValueError):
+        pass
+
+
+def watch_forever():
+    while True:
+        try:
+            check_notifications(publish_event)
+        except Exception as e:  # no token, network: try again next round, quietly
+            if not isinstance(e, Failure):
+                print(f"github watch: {type(e).__name__}", file=sys.stderr, flush=True)
+        time.sleep(POLL_SECONDS)
+
+
+def login():
+    """The token's user, for the events' `account` (empty if the token can't say)."""
+    if "login" not in _me:
+        try:
+            _me["login"] = api("GET", "/user").get("login", "")
+        except Failure:
+            return ""
+    return _me["login"]
+
+
+# Notifications worth a look; not subscribed, manual, state_change, comment.
+SIGNAL_REASONS = ("review_requested", "mention", "team_mention", "assign", "ci_activity",
+                  "approval_requested", "security_alert", "author")
+
+
+def check_notifications(publish):
+    """Publishes `code.notification` for each new (or newly active) notification of a
+    SIGNAL_REASONS reason, oldest first. GitHub keeps one thread per subject: a thread
+    is new again when its updated_at moves. The first check only remembers what's there."""
+    state = load_state()
+    query = {"per_page": 50}
+    if state.get("since"):
+        query["since"] = state["since"]
+    got = api("GET", "/notifications", query)
+    keys = [f"{n['id']}@{n.get('updated_at', '')}" for n in got]
+    if "seen" in state:
+        seen = set(state["seen"])
+        new = [n for n, k in zip(got, keys) if k not in seen and n.get("reason") in SIGNAL_REASONS]
+        for n in reversed(new[:MAX_EVENTS]):
+            subject, repo = n.get("subject") or {}, (n.get("repository") or {}).get("full_name", "")
+            publish({"account": login(), "forge": "github", "reason": n["reason"],
+                     "kind": KINDS.get(subject.get("type"), "other"), "repo": repo,
+                     "title": subject.get("title", ""), "url": html_url(subject, repo),
+                     "id": n["id"], "date": n.get("updated_at", "")})
+    state["seen"] = (keys + [k for k in state.get("seen", []) if k not in keys])[:KEEP]
+    state["since"] = max([n.get("updated_at", "") for n in got] + [state.get("since", "")])
+    save_state(state)
+
+
 I = {"type": "integer"}
 LIM = {"type": "object", "properties": {"limit": I}}
 TOOLS = {
@@ -156,7 +270,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "otto-github", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-github", "version": "0.2.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":
@@ -169,6 +283,8 @@ def handle(msg):
 
 
 def main():
+    if os.environ.get("OTTO_SOCKET"):
+        threading.Thread(target=watch_forever, daemon=True).start()
     for line in sys.stdin:
         if not line.strip():
             continue

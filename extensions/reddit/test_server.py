@@ -152,7 +152,7 @@ class Setup(Base):
         self.assertEqual(tok[0].get_header("Authorization"), "Basic Y2lkOnMzY3JldA==")  # cid:s3cret
         api = r.api_calls()[0]
         self.assertEqual(api.get_header("Authorization"), "bearer tok-1")
-        self.assertEqual(api.get_header("User-agent"), "linux:otto-reddit:0.1.1 (by /u/ana)")
+        self.assertEqual(api.get_header("User-agent"), "linux:otto-reddit:0.2.0 (by /u/ana)")
         self.assertTrue(api.full_url.startswith("https://oauth.reddit.com/best"))
 
     def test_web_app_uses_the_refresh_token(self):
@@ -216,13 +216,30 @@ class Reads(Base):
         r, d = self.run_with({("GET", "/message/inbox"): inbox}, "notifications", {})
         items = r["structuredContent"]["items"]
         self.assertEqual([(i["kind"], i["from"]) for i in items],
-                         [("reply", "eve"), ("mention", "zoe"), ("other", "max")])
+                         [("reply", "eve"), ("mention", "zoe"), ("message", "max")])
         self.assertEqual(items[0]["post_id"], "perso/t1_r")
         self.assertNotIn("post_id", items[2])
         self.assertEqual(items[2]["text"], "Salut: un message")
         self.assertEqual(d.query()["mark"], "false")
         r, _ = self.run_with({("GET", "/message/inbox"): inbox}, "notifications", {"unread": True})
         self.assertEqual([i["id"] for i in r["structuredContent"]["items"]], ["perso/t1_r", "perso/t4_p"])
+
+    def test_notification_events_seeded_then_new_only(self):
+        old = children({"kind": "t1", "data": {"name": "t1_o", "type": "comment_reply", "author": "eve",
+                                               "body": "vieux", "created_utc": 1, "context": "/r/p/comments/a/x/o/?context=3"}})
+        new = children({"kind": "t4", "data": {"name": "t4_p", "id": "p", "author": "max", "subject": "Salut",
+                                               "body": "un message", "created_utc": 2}},
+                       *old["data"]["children"])
+        events = []
+        with mock.patch.dict(os.environ, {"REDDIT_STATE": os.path.join(self.dir, "r", "n.json")}), \
+                mock.patch("urllib.request.urlopen", Reddit({("GET", "/message/inbox"): Seq([old, new, new])})):
+            for _ in range(3):
+                server.check_notifications(events.append)
+            self.assertEqual(server.load_state(), {"perso": ["perso/t4_p", "perso/t1_o"]})
+        self.assertEqual(events, [{"account": "perso", "network": "reddit", "kind": "message", "from": "max",
+                                   "handle": "u/max", "text": "Salut: un message",
+                                   "url": "https://reddit.com/message/messages/p", "id": "perso/t4_p",
+                                   "date": "1970-01-01T00:00:02Z"}])
 
     def test_search_routing(self):
         found = children(link("t3_s", "Trouvé", 5))

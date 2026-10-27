@@ -11,7 +11,10 @@ mark_read. Nothing is logged; no error carries the token.
 import json
 import os
 import re
+import socket
 import sys
+import threading
+import time
 import tomllib
 import urllib.error
 import urllib.parse
@@ -128,6 +131,99 @@ def mark_read(args):
     return {"done": tid}
 
 
+# --- code.notification events -----------------------------------------------------
+
+POLL_SECONDS = 300
+MAX_EVENTS = 10   # per check, newest kept
+KEEP = 300        # keys remembered
+
+
+def state_path():
+    # The path the sandbox grants (`[needs] write`); GITLAB_STATE for the tests.
+    return os.environ.get("GITLAB_STATE") or os.path.expanduser("~/.local/state/otto/gitlab/notifications.json")
+
+
+def load_state():
+    try:
+        with open(state_path()) as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def save_state(data):
+    path = state_path()
+    os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+    tmp = path + ".tmp"
+    with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
+        json.dump(data, f)
+    os.replace(tmp, path)
+
+
+def daemon(method, params, timeout=5):
+    """One request on the daemon socket under the `extension` role."""
+    path, tok = os.environ.get("OTTO_SOCKET"), os.environ.get("OTTO_EXTENSION_TOKEN")
+    if not path or not tok:
+        raise Failure("Le démon de Otto n'est pas joignable")
+    with socket.socket(socket.AF_UNIX) as s:
+        s.settimeout(timeout)
+        s.connect(path)
+        f = s.makefile("rwb")
+        for frame in ({"v": 1, "kind": "hello", "role": "extension", "token": tok},
+                      {"v": 1, "kind": "request", "id": 1, "method": method, "params": params}):
+            f.write(json.dumps(frame).encode() + b"\n")
+        f.flush()
+        for line in f:
+            reply = json.loads(line)
+            if reply.get("kind") == "response" and reply.get("id") == 1:
+                if not reply.get("ok"):
+                    raise Failure(f"démon: {reply.get('error')}")
+                return reply["result"]
+    raise Failure("Le démon a fermé la connexion")
+
+
+def publish_event(data):
+    try:
+        daemon("events.publish", {"type": "code.notification", "data": data})
+    except (Failure, OSError, ValueError):
+        pass
+
+
+def watch_forever():
+    while True:
+        try:
+            check_notifications(publish_event)
+        except Exception as e:  # no token, network: try again next round, quietly
+            if not isinstance(e, Failure):
+                print(f"gitlab watch: {type(e).__name__}", file=sys.stderr, flush=True)
+        time.sleep(POLL_SECONDS)
+
+
+# To-dos worth a look; not those the user added themselves (marked).
+QUIET_ACTIONS = ("marked",)
+
+
+def check_notifications(publish):
+    """Publishes `code.notification` for each new pending to-do, oldest first. The
+    first check only remembers what's there."""
+    state = load_state()
+    got = api("GET", "/todos", {"state": "pending", "per_page": 50})
+    ids = [str(t["id"]) for t in got]
+    if "seen" in state:
+        seen = set(state["seen"])
+        new = [t for t in got if str(t["id"]) not in seen and t.get("action_name") not in QUIET_ACTIONS]
+        for t in reversed(new[:MAX_EVENTS]):
+            publish({"account": me(), "forge": "gitlab", "reason": t.get("action_name", ""),
+                     "kind": KINDS.get(t.get("target_type"), "other"),
+                     "repo": (t.get("project") or {}).get("path_with_namespace", ""),
+                     "title": (t.get("target") or {}).get("title") or t.get("body", ""),
+                     "author": (t.get("author") or {}).get("username", ""),
+                     "url": t.get("target_url", ""), "id": str(t["id"]), "date": t.get("created_at", "")})
+    state["seen"] = (ids + [k for k in state.get("seen", []) if k not in ids])[:KEEP]
+    save_state(state)
+
+
 I = {"type": "integer"}
 LIM = {"type": "object", "properties": {"limit": I}}
 TOOLS = {
@@ -160,7 +256,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "otto-gitlab", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-gitlab", "version": "0.2.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":
@@ -173,6 +269,8 @@ def handle(msg):
 
 
 def main():
+    if os.environ.get("OTTO_SOCKET"):
+        threading.Thread(target=watch_forever, daemon=True).start()
     for line in sys.stdin:
         if not line.strip():
             continue

@@ -11,6 +11,8 @@ Every forge the user connected, as one: ids and repos carry their provider (`git
 - `code.repos {}`: their repositories; `code.ci {repo}`: its latest CI runs (status: success, failed, running…).
 - `code.mark_read {id}`: an inbox item done.
 
+New inbox items also arrive as `code.notification` events `{account, forge, reason, kind, repo, title, url, id, date}` (every 5 minutes); `id` is the one `code.mark_read` takes.
+
 Answering:
 - A short triage: what blocks someone else first (reviews requested), then failures (CI), then mentions; one line each with the repo. Offer to open one (`web.open` its `url`).
 - "La CI est verte ?": `code.repos` to find the repo, then `code.ci`.

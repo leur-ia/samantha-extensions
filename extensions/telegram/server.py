@@ -426,7 +426,7 @@ def handle(msg):
     if method == "initialize":
         start_poller()
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "otto-telegram", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-telegram", "version": "0.1.1"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":

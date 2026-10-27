@@ -1,6 +1,6 @@
 id = "google"
 name = "Google"
-version = "0.2.1"
+version = "0.3.0"
 description = "Mail, calendar and contacts provider for Google accounts: Gmail, Google Calendar (Meet links, reminders), Google Contacts."
 
 # Stdlib-only Python on Google's APIs. Sign-in is Otto's: your own OAuth client
@@ -56,5 +56,15 @@ data_class = "personal"
 type = "calendar.soon"
 data_class = "personal"
 
+# New Gmail inbox mail, every 3 minutes: {account, from, name, subject, id, date, unread,
+# snippet (160 characters), labels (CATEGORY_PROMOTIONS…), list_unsubscribe}; never the
+# body. Mail from before the first start is never announced. Triaged by default.
+[[event]]
+type = "mail.received"
+data_class = "personal"
+signal = true
+
 [needs]
 network = true
+# The Gmail historyId reached per account (gmail.json).
+write = ["~/.local/state/otto/google"]

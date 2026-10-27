@@ -28,6 +28,7 @@ import os
 import re
 import socket
 import sys
+import threading
 import time
 import tomllib
 import urllib.error
@@ -145,7 +146,7 @@ def password(acct):
 # --- HTTP -------------------------------------------------------------------------
 
 def agent(acct):
-    return f"linux:otto-reddit:0.1.1 (by /u/{acct['username']})"
+    return f"linux:otto-reddit:0.2.0 (by /u/{acct['username']})"
 
 
 def token(acct):
@@ -390,9 +391,11 @@ def notifications(args):
             author = d.get("author") or "reddit"
             item = {"id": f"{acct['name']}/{d['name']}", "account": acct["name"],
                     "network": "reddit", "kind": KINDS.get(d.get("type"), "other")
-                    if c["kind"] == "t1" else "other", "from": author, "handle": f"u/{author}",
+                    if c["kind"] == "t1" else "message" if c["kind"] == "t4" else "other",
+                    "from": author, "handle": f"u/{author}",
                     "time": iso(d.get("created_utc")), "text": (d.get("body") or "")[:EXCERPT],
-                    "unread": bool(d.get("new"))}
+                    "unread": bool(d.get("new")),
+                    "url": SITE + (d.get("context") or f"/message/messages/{d.get('id', '')}")}
             if c["kind"] == "t1":
                 item["post_id"] = item["id"]
             if d.get("subject") and c["kind"] != "t1":
@@ -494,6 +497,79 @@ def like(args):
     return {"id": f"{acct['name']}/{full}", "liked": not undo}
 
 
+# --- social.notification events -------------------------------------------------------
+
+POLL_SECONDS = 300
+SIGNAL_KINDS = ("mention", "reply", "message", "follow")  # not likes nor reposts
+MAX_EVENTS = 10   # per account and check, newest kept
+KEEP = 300        # notification ids remembered per account
+EXCERPT_EVENT = 200
+
+
+def state_path():
+    # The path the sandbox grants (`[needs] write`); REDDIT_STATE for the tests.
+    return os.environ.get("REDDIT_STATE") or os.path.expanduser(
+        "~/.local/state/otto/reddit/notifications.json")
+
+
+def load_state():
+    try:
+        with open(state_path()) as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def save_state(data):
+    path = state_path()
+    os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+    tmp = path + ".tmp"
+    with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
+        json.dump(data, f)
+    os.replace(tmp, path)
+
+
+def check_notifications(publish):
+    """Publishes `social.notification` for each new mention, reply, message or follow,
+    oldest first. An account's first check only remembers what is there: no old news."""
+    state = load_state()
+    for name in load_config():
+        try:
+            items = notifications({"account": name, "limit": 40})["items"]
+        except Failure:
+            continue
+        known = state.get(name)
+        if known is not None:
+            seen = set(known)
+            new = [i for i in items if i["id"] not in seen and i["kind"] in SIGNAL_KINDS]
+            for i in reversed(new[:MAX_EVENTS]):
+                publish({"account": i["account"], "network": i["network"], "kind": i["kind"],
+                         "from": i["from"], "handle": i["handle"],
+                         "text": (i.get("text") or "")[:EXCERPT_EVENT], "url": i.get("url", ""),
+                         "id": i["id"], "date": i["time"]})
+        ids = [i["id"] for i in items]
+        state[name] = (ids + [k for k in known or [] if k not in ids])[:KEEP]
+    save_state(state)
+
+
+def publish_event(data):
+    try:
+        daemon("events.publish", {"type": "social.notification", "data": data}, timeout=5)
+    except (Failure, OSError, ValueError):
+        pass
+
+
+def watch_forever():
+    while True:
+        try:
+            check_notifications(publish_event)
+        except Exception as e:  # not set up, network: try again next round, quietly
+            if not isinstance(e, Failure):
+                print(f"reddit watch: {type(e).__name__}", file=sys.stderr, flush=True)
+        time.sleep(POLL_SECONDS)
+
+
 # --- MCP ----------------------------------------------------------------------------
 
 S, I, B = {"type": "string"}, {"type": "integer"}, {"type": "boolean"}
@@ -552,7 +628,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "otto-reddit", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-reddit", "version": "0.2.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":
@@ -566,6 +642,8 @@ def handle(msg):
 
 
 def main():
+    if os.environ.get("OTTO_SOCKET"):
+        threading.Thread(target=watch_forever, daemon=True).start()
     for line in sys.stdin:
         if not line.strip():
             continue

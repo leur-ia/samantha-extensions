@@ -1,6 +1,6 @@
 id = "github"
 name = "GitHub"
-version = "0.1.1"
+version = "0.2.0"
 description = "Code provider for GitHub: notifications, reviews waiting, your pull requests, repositories, Actions runs (your own token)."
 
 # Stdlib-only Python on the REST API. Token: `otto provider set-key github`.
@@ -14,7 +14,17 @@ secrets = { GITHUB_TOKEN = "secret:github" }
 capability = "code"
 server = "github"
 
+# Each new or newly active notification, checked every 5 minutes: review requested,
+# mention, assigned, CI failed on the user's run (ci_activity), activity on their own
+# PR or issue (author)… {account, forge, reason, kind, repo, title, url, id, date}.
+# What was there at the first check is never announced. Triaged by default.
+[[event]]
+type = "code.notification"
+data_class = "personal"
+signal = true
+
 [needs]
 network = true
-
 secrets = ["github"]
+# The notifications already seen (notifications.json).
+write = ["~/.local/state/otto/github"]

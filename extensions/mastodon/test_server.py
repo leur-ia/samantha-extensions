@@ -169,6 +169,29 @@ class Reading(Base):
                          ["follow", "other", "other"])
         self.assertNotIn("post_id", r["structuredContent"]["items"][4])
 
+    def test_notification_events_seeded_then_new_only(self):
+        dm = {**OWN, "id": "444", "visibility": "direct", "content": "<p>" + "psst " * 60 + "</p>"}
+        old = [{"id": "5", "type": "mention", "created_at": "t5", "account": BOB, "status": OWN}]
+        new = [{"id": "8", "type": "favourite", "created_at": "t8", "account": BOB, "status": OWN},
+               {"id": "7", "type": "mention", "created_at": "t7", "account": BOB, "status": dm},
+               {"id": "6", "type": "follow", "created_at": "t6",
+                "account": {**ANA, "url": "https://mastodon.social/@ana"}}] + old
+        d = tempfile.TemporaryDirectory()
+        self.addCleanup(d.cleanup)
+        events = []
+        with mock.patch.dict(os.environ, {"MASTODON_STATE": os.path.join(d.name, "m", "n.json")}):
+            with mock.patch("urllib.request.urlopen", Instances({("GET", M + "/api/v1/notifications"): Then(old, new, new)})):
+                for _ in range(3):
+                    server.check_notifications(events.append)
+            self.assertEqual(server.load_state(), {"perso": ["perso/n8", "perso/n7", "perso/n6", "perso/n5"]})
+        self.assertEqual([(e["kind"], e["id"]) for e in events], [("follow", "perso/n6"), ("message", "perso/n7")],
+                         "the first check seeds; likes aren't news; nothing twice")
+        self.assertEqual(events[0]["url"], "https://mastodon.social/@ana")
+        m = events[1]
+        self.assertEqual((m["network"], m["account"], m["from"], m["handle"], m["date"], m["url"]),
+                         ("mastodon", "perso", "bob", "@bob@piaille.fr", "t7", "https://mastodon.social/@ana/333"))
+        self.assertEqual(len(m["text"]), 200)
+
     def test_tag_and_word_search_routes(self):
         r, i = self.run_with({("GET", M + "/api/v1/timelines/tag/caf%C3%A9"): [OWN]},
                              "search", {"query": "#café"})

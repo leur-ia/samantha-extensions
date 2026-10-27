@@ -1,6 +1,6 @@
 id = "code"
 name = "Code"
-version = "0.1.2"
+version = "0.1.3"
 description = "Your code forges in one place (GitHub, GitLab…): notifications, reviews waiting for you, your open pull/merge requests, repositories, CI status."
 
 # The code front: Otto's daemon serves it from every provider of `code`.

@@ -1,6 +1,6 @@
 id = "reddit"
 name = "Reddit"
-version = "0.1.1"
+version = "0.2.0"
 description = "Social provider for Reddit (official API): the front page, inbox, search by words or r/subreddit, threads, post, reply and upvote."
 
 # Stdlib-only Python on Reddit's official OAuth2 API (oauth.reddit.com), never
@@ -26,10 +26,20 @@ args = ["server.py"]
 capability = "social"
 server = "reddit"
 
+# Each new mention, reply or message (private messages), checked every 5 minutes: {account, network, kind,
+# from, handle, text (200 characters), url, id, date}. Not likes nor reposts; what was
+# there at the first check is never announced. Triaged by default.
+[[event]]
+type = "social.notification"
+data_class = "personal"
+signal = true
+
 [needs]
 network = true
 read = ["~/.config/otto/social.toml"]
 secrets = ["social-*"]
+# The notification ids already seen, per account (notifications.json).
+write = ["~/.local/state/otto/reddit"]
 
 [tools."reddit.accounts"]
 class = "read"

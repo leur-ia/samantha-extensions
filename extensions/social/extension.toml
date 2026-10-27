@@ -1,6 +1,6 @@
 id = "social"
 name = "Social"
-version = "0.1.0"
+version = "0.1.1"
 description = "The user's social networks in one place (Mastodon, Bluesky, Reddit…): their feed, notifications, search, read a thread, post, reply and like."
 
 # The social front: Otto's daemon serves it from every provider of `social`. Each

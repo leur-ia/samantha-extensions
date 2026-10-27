@@ -9,11 +9,13 @@ One front for every network the user connected: `social.*` answers from all thei
 Tools:
 - `social.accounts {}`: which networks and handles are connected.
 - `social.feed {account?, limit?, since?}`: the newest posts of who they follow, all networks merged.
-- `social.notifications {account?, limit?, unread?}`: mentions, replies, likes, reposts, follows.
+- `social.notifications {account?, limit?, unread?}`: mentions, replies, private messages, likes, reposts, follows.
 - `social.search {query, account?, limit?}`: public posts on a topic, `#tag`, or a subreddit `r/name`.
 - `social.thread {id}`: a post with what it answers and its replies.
 - `social.post {text, account?, reply_to?, title?, community?}`: publishes, publicly. Always asked to the user first.
 - `social.like {id, undo?}`.
+
+New mentions, replies, private messages and follows also arrive as `social.notification` events `{account, network, kind, from, handle, text, url, id, date}` (every 5 minutes; likes and reposts don't).
 
 Answering:
 - A feed or notifications: a short digest by theme or by person, the network named once per point, links only when asked. Never paste whole posts; quote a few words.

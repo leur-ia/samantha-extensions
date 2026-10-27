@@ -54,7 +54,7 @@
     },
     {
       "name": "notifications",
-      "description": "What happened around the user, newest first: {items: [{id, account, network, kind: mention|reply|like|repost|follow|other, from, handle, time, text?, post_id?}], errors?}.",
+      "description": "What happened around the user, newest first: {items: [{id, account, network, kind: mention|reply|message|like|repost|follow|other, from, handle, time, text?, url?, post_id?}], errors?}.",
       "inputSchema": {
         "type": "object",
         "properties": {

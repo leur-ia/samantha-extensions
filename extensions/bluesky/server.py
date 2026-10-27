@@ -22,6 +22,7 @@ import os
 import re
 import socket
 import sys
+import threading
 import time
 import tomllib
 import unicodedata
@@ -222,6 +223,14 @@ def make_id(acct, uri, cid=""):
     return f"{acct['name']}|{uri}|{cid or ''}"
 
 
+def web_url(uri, handle=""):
+    """bsky.app's page of a post's at:// uri; else the profile of `handle`."""
+    m = re.fullmatch(r"at://([^/]+)/app\.bsky\.feed\.post/([^/]+)", uri)
+    if m:
+        return f"https://bsky.app/profile/{m[1]}/post/{m[2]}"
+    return f"https://bsky.app/profile/{handle}" if handle else ""
+
+
 def parse_id(cfg, pid):
     name, _, rest = plain(pid).partition("|")
     uri, _, cid = rest.partition("|")
@@ -340,7 +349,9 @@ def notifications(args):
             author, rec = n.get("author") or {}, n.get("record") or {}
             item = {"id": make_id(acct, n["uri"], n.get("cid")), "account": acct["name"], "network": "bluesky",
                     "kind": KINDS.get(n.get("reason"), "other"), "from": author.get("displayName") or author.get("handle", ""),
-                    "handle": author.get("handle", ""), "time": n.get("indexedAt", "")}
+                    "handle": author.get("handle", ""), "time": n.get("indexedAt", ""),
+                    "url": web_url(n["uri"] if n.get("reason") in ("mention", "reply", "quote")
+                                   else n.get("reasonSubject") or "", author.get("handle", ""))}
             if rec.get("text"):
                 item["text"] = rec["text"]
             if n.get("reason") in ("mention", "reply", "quote"):
@@ -455,6 +466,79 @@ def like(args):
     return {"id": make_id(acct, uri, cid), "liked": True}
 
 
+# --- social.notification events -------------------------------------------------------
+
+POLL_SECONDS = 300
+SIGNAL_KINDS = ("mention", "reply", "message", "follow")  # not likes nor reposts
+MAX_EVENTS = 10   # per account and check, newest kept
+KEEP = 300        # notification ids remembered per account
+EXCERPT_EVENT = 200
+
+
+def state_path():
+    # The path the sandbox grants (`[needs] write`); BLUESKY_STATE for the tests.
+    return os.environ.get("BLUESKY_STATE") or os.path.expanduser(
+        "~/.local/state/otto/bluesky/notifications.json")
+
+
+def load_state():
+    try:
+        with open(state_path()) as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def save_state(data):
+    path = state_path()
+    os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+    tmp = path + ".tmp"
+    with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
+        json.dump(data, f)
+    os.replace(tmp, path)
+
+
+def check_notifications(publish):
+    """Publishes `social.notification` for each new mention, reply, message or follow,
+    oldest first. An account's first check only remembers what is there: no old news."""
+    state = load_state()
+    for name in load_config():
+        try:
+            items = notifications({"account": name, "limit": 40})["items"]
+        except Failure:
+            continue
+        known = state.get(name)
+        if known is not None:
+            seen = set(known)
+            new = [i for i in items if i["id"] not in seen and i["kind"] in SIGNAL_KINDS]
+            for i in reversed(new[:MAX_EVENTS]):
+                publish({"account": i["account"], "network": i["network"], "kind": i["kind"],
+                         "from": i["from"], "handle": i["handle"],
+                         "text": (i.get("text") or "")[:EXCERPT_EVENT], "url": i.get("url", ""),
+                         "id": i["id"], "date": i["time"]})
+        ids = [i["id"] for i in items]
+        state[name] = (ids + [k for k in known or [] if k not in ids])[:KEEP]
+    save_state(state)
+
+
+def publish_event(data):
+    try:
+        daemon("events.publish", {"type": "social.notification", "data": data}, timeout=5)
+    except (Failure, OSError, ValueError):
+        pass
+
+
+def watch_forever():
+    while True:
+        try:
+            check_notifications(publish_event)
+        except Exception as e:  # not set up, network: try again next round, quietly
+            if not isinstance(e, Failure):
+                print(f"bluesky watch: {type(e).__name__}", file=sys.stderr, flush=True)
+        time.sleep(POLL_SECONDS)
+
+
 # --- MCP -----------------------------------------------------------------------------
 
 S, I, B = {"type": "string"}, {"type": "integer"}, {"type": "boolean"}
@@ -499,7 +583,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "otto-bluesky", "version": "0.1.0"}}
+                  "serverInfo": {"name": "otto-bluesky", "version": "0.2.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":
@@ -512,6 +596,8 @@ def handle(msg):
 
 
 def main():
+    if os.environ.get("OTTO_SOCKET"):
+        threading.Thread(target=watch_forever, daemon=True).start()
     for line in sys.stdin:
         if not line.strip():
             continue

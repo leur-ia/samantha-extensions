@@ -7,7 +7,9 @@ Google Calendar (`calendar`), Google Contacts (`contacts`). Run as `server.py ma
 (`oauth.token`; the user signed in with `otto account add google`, with their own
 OAuth client); no password or refresh token reaches this server, and nothing is
 logged. The calendar server also announces events 10 minutes before they start
-(island activity `google.activity`, event `calendar.soon`).
+(island activity `google.activity`, event `calendar.soon`); the mail server publishes
+`mail.received` for new inbox mail (Gmail history from a stored historyId, in
+~/.local/state/otto/google/gmail.json).
 
 Ids carry their account: `me@gmail.com/18c2…` (an address has no `/`).
 """
@@ -49,6 +51,10 @@ class Failure(Exception):
 
 class Denied(Failure):
     """Google answered 401 or 403."""
+
+
+class Missing(Failure):
+    """Google answered 404."""
 
 
 # --- daemon and Google APIs --------------------------------------------------------
@@ -124,7 +130,7 @@ def api(account, method, url, body=None, query=None):
             raise Denied(f"Google refuse l'accès ({e.code}): API non activée dans ton projet Google Cloud, "
                           f"ou consentement à renouveler (`otto account add google`). {msg}".strip())
         if e.code == 404:
-            raise Failure("Introuvable chez Google")
+            raise Missing("Introuvable chez Google")
         raise Failure(f"Google a refusé la requête ({e.code}): {msg}".strip())
     except (urllib.error.URLError, TimeoutError, OSError):
         raise Failure("Google injoignable (réseau ?)")
@@ -335,6 +341,101 @@ def mail_send(args):
     account = sending_account(args)
     m = api(account, "POST", f"{GMAIL}/messages/send", raw_message(account, args))
     return {"sent": True, "account": account, "id": f"{account}/{m.get('id', '')}"}
+
+
+# --- mail.received -----------------------------------------------------------------
+
+MAIL_POLL = 180    # seconds between Gmail checks
+MAX_EVENTS = 10    # per account and check, newest kept (a catch-up after a long stop)
+SNIPPET = 160
+
+
+def state_path():
+    # The path the sandbox grants (`[needs] write`); GOOGLE_STATE for the tests.
+    return os.environ.get("GOOGLE_STATE") or os.path.expanduser("~/.local/state/otto/google/gmail.json")
+
+
+def load_state():
+    try:
+        with open(state_path()) as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def save_state(data):
+    path = state_path()
+    os.makedirs(os.path.dirname(path), mode=0o700, exist_ok=True)
+    tmp = path + ".tmp"
+    with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:
+        json.dump(data, f)
+    os.replace(tmp, path)
+
+
+def received(account, m):
+    """A new message as `mail.received` data: headers, Gmail's snippet, never the body."""
+    out = mail_row(account, m)
+    del out["when"]
+    h = headers_of(m)
+    out.update(snippet=html.unescape(m.get("snippet") or "")[:SNIPPET],
+               # System labels only (CATEGORY_PROMOTIONS…): a user label's id says nothing.
+               labels=[x for x in m.get("labelIds") or [] if not x.startswith("Label_")],
+               list_unsubscribe="list-unsubscribe" in h)
+    return out
+
+
+def added_since(account, start):
+    """Ids of the messages added to INBOX since history `start`, oldest first, and the
+    newest historyId."""
+    ids, page, latest = [], None, start
+    while True:
+        q = {"startHistoryId": start, "historyTypes": "messageAdded", "labelId": "INBOX", "maxResults": 500}
+        if page:
+            q["pageToken"] = page
+        got = api(account, "GET", f"{GMAIL}/history", query=q)
+        for h in got.get("history") or []:
+            ids += [a["message"]["id"] for a in h.get("messagesAdded") or [] if a["message"]["id"] not in ids]
+        latest, page = got.get("historyId", latest), got.get("nextPageToken")
+        if not page:
+            return ids, latest
+
+
+def check_mail(publish):
+    """Publishes `mail.received` for each message new in an account's inbox. An account's
+    first check only stores where its history stands: mail from before isn't announced."""
+    state = load_state()
+    for account in accounts():
+        try:
+            if not state.get(account):
+                state[account] = api(account, "GET", f"{GMAIL}/profile")["historyId"]
+                continue
+            try:
+                ids, state[account] = added_since(account, state[account])
+            except Missing:  # history too old (about a week): start over from now
+                state[account] = api(account, "GET", f"{GMAIL}/profile")["historyId"]
+                continue
+            for mid in ids[-MAX_EVENTS:]:
+                try:
+                    m = api(account, "GET", f"{GMAIL}/messages/{mid}", query={
+                        "format": "metadata", "metadataHeaders": ["From", "Subject", "List-Unsubscribe"]})
+                except Missing:
+                    continue  # deleted since
+                labels = m.get("labelIds") or []
+                if "INBOX" in labels and "SENT" not in labels:  # not the user's own mail to self
+                    publish("mail.received", received(account, m))
+        except Failure:
+            continue
+    save_state(state)
+
+
+def watch_mail():
+    while True:
+        try:
+            check_mail(publish)
+        except (Failure, OSError, ValueError, KeyError) as e:
+            print(f"google mail watch: {type(e).__name__}", file=sys.stderr, flush=True)
+        time.sleep(MAIL_POLL)
 
 
 # --- Calendar ----------------------------------------------------------------------
@@ -717,7 +818,7 @@ def handle(msg):
     params = msg.get("params") or {}
     if method == "initialize":
         result = {"protocolVersion": PROTOCOL, "capabilities": {"tools": {}},
-                  "serverInfo": {"name": "otto-google", "version": "0.2.0"}}
+                  "serverInfo": {"name": "otto-google", "version": "0.3.0"}}
     elif method == "ping":
         result = {}
     elif method == "tools/list":
@@ -735,6 +836,8 @@ def main():
     TOOLS = ROLES.get(role, ROLES["mail"])
     if role == "calendar" and os.environ.get("OTTO_SOCKET"):
         threading.Thread(target=remind_forever, daemon=True).start()
+    if role == "mail" and os.environ.get("OTTO_SOCKET"):
+        threading.Thread(target=watch_mail, daemon=True).start()
     for line in sys.stdin:
         if not line.strip():
             continue

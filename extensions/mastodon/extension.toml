@@ -1,6 +1,6 @@
 id = "mastodon"
 name = "Mastodon"
-version = "0.1.0"
+version = "0.2.0"
 description = "Social provider for Mastodon accounts (official REST API): home feed, notifications, search and tags, threads, post, reply and favourite."
 
 # Stdlib-only Python on the Mastodon REST API (v1/v2) of each account's instance.
@@ -24,10 +24,20 @@ args = ["server.py"]
 capability = "social"
 server = "mastodon"
 
+# Each new mention, reply, message (direct mentions) or follow, checked every 5 minutes: {account, network, kind,
+# from, handle, text (200 characters), url, id, date}. Not likes nor reposts; what was
+# there at the first check is never announced. Triaged by default.
+[[event]]
+type = "social.notification"
+data_class = "personal"
+signal = true
+
 [needs]
 network = true
 read = ["~/.config/otto/social.toml"]
 secrets = ["social-*"]
+# The notification ids already seen, per account (notifications.json).
+write = ["~/.local/state/otto/mastodon"]
 
 [tools."mastodon.accounts"]
 class = "read"
