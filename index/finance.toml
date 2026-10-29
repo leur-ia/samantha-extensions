@@ -2,6 +2,12 @@ description = "Personal finance in one place: bank accounts synced through Enabl
 recipes = ["Suivre le budget", "Surveiller les mouvements"]
 
 [[release]]
+version = "0.1.3"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/finance"
+commit = "e192f3885de3315c95581ecf28abdee92cca8c49"
+
+[[release]]
 version = "0.1.2"
 source = "https://github.com/leur-ia/samantha-extensions.git"
 path = "extensions/finance"
