@@ -5,7 +5,7 @@ recipes = ["Suivre le budget", "Surveiller les mouvements"]
 version = "0.1.1"
 source = "https://github.com/leur-ia/samantha-extensions.git"
 path = "extensions/finance"
-commit = "35062da00f953dee60a3f8081ce3d01de31950ca"
+commit = "5aebcde9f2d97fe4bfe3fdea12328777f6b3aab7"
 
 [[release]]
 version = "0.1.0"
