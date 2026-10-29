@@ -8,11 +8,15 @@ Access tokens come from Otto's daemon (`oauth.token`, the user signed in with
 `otto account add microsoft`); this server never sees a password or refresh
 token, and logs nothing.
 
-Ids carry their account: `me@outlook.com/AAMkAG…` (an address has no `/`).
+Ids carry their account: `me@outlook.com/AAMkAG…` (an address has no `/`). Attachments
+go through Otto's uploads folder: `attachment` saves one there, draft, send and forward
+attach uploads by id (`<12 hex>/<name>`).
 """
 
+import base64
 import datetime
 import json
+import mimetypes
 import os
 import re
 import socket
@@ -26,6 +30,10 @@ GRAPH = "https://graph.microsoft.com/v1.0"
 TIMEOUT = 20
 MAX_LIST = 50
 MAX_BODY = 20000
+# ponytail: one Graph request per attachment, under its 4 MB request limit; larger ones
+# need an upload session (createUploadSession).
+MAX_FILE = 3 * 1024 * 1024
+MAX_FILES = 25 * 1024 * 1024
 FRENCH = os.environ.get("OTTO_LANGUAGE", os.environ.get("LANG", "fr")).startswith("fr")
 SETUP = ("Aucun compte Microsoft: enregistre ton app (client_id dans [oauth.microsoft] de "
          "config.toml), puis `otto account add microsoft`.")
@@ -271,8 +279,76 @@ def recipients(to):
     return out
 
 
+# --- files: Otto's uploads folder ----------------------------------------------------
+# Files the user sends from the phone are `<12 hex>/<name>` under it, and the web app
+# serves them at /api/files/<id>: attachments come from there and are saved there.
+
+FILE_ID = re.compile(r"[0-9a-f]{12}/[^/\x00-\x1f]+")
+
+
+def uploads():
+    base = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+    return os.path.join(base, "otto", "uploads")
+
+
+def files_of(ids):
+    """[(name, content type, bytes)] of uploads ids: MAX_FILE each, MAX_FILES in all."""
+    out, total = [], 0
+    for fid in ids or []:
+        fid = str(fid)
+        try:
+            if not FILE_ID.fullmatch(fid) or fid.endswith(("/.", "/..")):
+                raise OSError
+            with open(os.path.join(uploads(), fid), "rb") as f:
+                data = f.read(MAX_FILES + 1)
+        except OSError:
+            raise Failure(f"Pas de fichier {fid!r}: joins les fichiers envoyés par l'utilisateur ou "
+                          "enregistrés par mail.attachment") from None
+        total += len(data)
+        if len(data) > MAX_FILE or total > MAX_FILES:
+            raise Failure(f"Pièce jointe trop lourde pour Outlook ici ({MAX_FILE >> 20} Mo chacune, "
+                          f"{MAX_FILES >> 20} Mo en tout)")
+        name = fid.partition("/")[2]
+        out.append((name, mimetypes.guess_type(name)[0] or "application/octet-stream", data))
+    return out
+
+
+def save_file(name, mime, data):
+    """A file in the uploads, as `attachment` returns it."""
+    name = re.sub(r"[/\\\x00-\x1f\x7f]", "_", name).lstrip(". ")[:120].strip() or "fichier"
+    folder = os.path.join(uploads(), os.urandom(6).hex())
+    os.makedirs(folder, mode=0o700)
+    path = os.path.join(folder, name)
+    with open(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb") as f:
+        f.write(data)
+    fid = f"{os.path.basename(folder)}/{name}"
+    return {"file": fid, "name": name, "mime": mime, "size": len(data), "path": path,
+            "url": "/api/files/" + "/".join(urllib.parse.quote(x) for x in fid.split("/"))}
+
+
+def message_path(native):
+    return f"/me/messages/{urllib.parse.quote(native, safe='')}"
+
+
+def attached_then(account, draft_id, files, send):
+    """Adds `files` to a draft, then sends it (send) or leaves it in Drafts."""
+    for name, mime, data in files:
+        graph(account, "POST", f"{message_path(draft_id)}/attachments",
+              {"@odata.type": "#microsoft.graph.fileAttachment", "name": name, "contentType": mime,
+               "contentBytes": base64.b64encode(data).decode()})
+    if send:
+        graph(account, "POST", f"{message_path(draft_id)}/send")
+        return {"sent": True, "account": account}
+    return {"draft": True, "id": f"{account}/{draft_id}", "account": account}
+
+
 def outgoing(args, send):
     subject, body = str(args.get("subject") or ""), str(args.get("body") or "")
+    files = files_of(args.get("attachments"))
+    if args.get("reply_to_id") and files:  # /reply takes no attachments: a draft first
+        account, native = split_id(args["reply_to_id"])
+        draft = graph(account, "POST", f"{message_path(native)}/createReply", {"comment": body})
+        return attached_then(account, draft.get("id", ""), files, send)
     if args.get("reply_to_id"):
         account, native = split_id(args["reply_to_id"])
         path = f"/me/messages/{urllib.parse.quote(native, safe='')}"
@@ -287,6 +363,8 @@ def outgoing(args, send):
         raise Failure(f"Pas de compte Microsoft {account!r}: {', '.join(names)}")
     message = {"subject": subject, "body": {"contentType": "Text", "content": body},
                "toRecipients": recipients(args.get("to"))}
+    if files:
+        return attached_then(account, graph(account, "POST", "/me/messages", message).get("id", ""), files, send)
     if send:
         graph(account, "POST", "/me/sendMail", {"message": message, "saveToSentItems": True})
         return {"sent": True, "account": account}
@@ -300,6 +378,40 @@ def mail_draft(args):
 
 def mail_send(args):
     return outgoing(args, send=True)
+
+
+def mail_forward(args):
+    """Outlook forwards with the original's attachments itself."""
+    account, native = split_id(args.get("id"))
+    out = {"toRecipients": recipients(args.get("to")), "comment": str(args.get("body") or "")}
+    files = files_of(args.get("attachments"))
+    if files:
+        draft = graph(account, "POST", f"{message_path(native)}/createForward", out)
+        result = attached_then(account, draft.get("id", ""), files, send=True)
+    else:
+        graph(account, "POST", f"{message_path(native)}/forward", out)
+        result = {"sent": True, "account": account}
+    return {**result, "forwarded": f"{account}/{native}"}
+
+
+def mail_attachment(args):
+    account, native = split_id(args.get("id"))
+    listed = graph(account, "GET", f"{message_path(native)}/attachments",
+                   query={"$select": "id,name,contentType,size"}).get("value", [])
+    want = str(args.get("name") or "")
+    found = next((a for a in listed if a.get("name") == want), None)
+    if found is None:
+        raise Failure(f"Pas de pièce jointe {want!r} (pièces jointes : {', '.join(a.get('name', '') for a in listed) or 'aucune'})")
+    a = graph(account, "GET", f"{message_path(native)}/attachments/{urllib.parse.quote(found['id'], safe='')}")
+    if "contentBytes" not in a:  # an attached mail or a link: no file to save
+        raise Failure(f"{want!r} n'est pas un fichier (un mail joint ou un lien) : ouvre-le dans Outlook")
+    return save_file(want, a.get("contentType") or "application/octet-stream", base64.b64decode(a["contentBytes"]))
+
+
+def mail_trash(args):
+    account, native = split_id(args.get("id"))
+    graph(account, "POST", f"{message_path(native)}/move", {"destinationId": "deleteditems"})
+    return {"id": f"{account}/{native}", "trashed": True}
 
 
 # --- calendar ----------------------------------------------------------------------
@@ -521,8 +633,9 @@ def calendar_delete(args):
 # --- MCP ---------------------------------------------------------------------------
 
 S, I, B = {"type": "string"}, {"type": "integer"}, {"type": "boolean"}
+FILES = {"type": "array", "items": S}
 OUT = {"type": "object", "required": ["to", "subject", "body"], "properties": {
-    "to": S, "subject": S, "body": S, "reply_to_id": S, "account": S}}
+    "to": S, "subject": S, "body": S, "reply_to_id": S, "account": S, "attachments": FILES}}
 MAIL = {
     "accounts": (mail_accounts, "The Microsoft accounts signed in.", {"type": "object", "properties": {}}),
     "list": (mail_list, "Newest messages of a folder (inbox by default), every account or one.",
@@ -535,6 +648,12 @@ MAIL = {
                   {"type": "object", "required": ["id"], "properties": {"id": S, "read": B}}),
     "draft": (mail_draft, "Save a draft (a reply with reply_to_id).", OUT),
     "send": (mail_send, "Send a mail (a reply with reply_to_id).", OUT),
+    "forward": (mail_forward, "Forward a message with its attachments.",
+                {"type": "object", "required": ["id", "to"], "properties": {"id": S, "to": S, "body": S, "attachments": FILES}}),
+    "attachment": (mail_attachment, "Save one attachment into Otto's files.",
+                   {"type": "object", "required": ["id", "name"], "properties": {"id": S, "name": S}}),
+    "trash": (mail_trash, "Move a message to Deleted Items.",
+              {"type": "object", "required": ["id"], "properties": {"id": S}}),
 }
 CALENDAR = {
     "events": (calendar_events, "Outlook events from date for days, local times.",

@@ -1,6 +1,6 @@
 id = "google"
 name = "Google"
-version = "0.3.2"
+version = "0.4.0"
 description = "Mail, calendar and contacts provider for Google accounts: Gmail, Google Calendar (Meet links, reminders), Google Contacts."
 
 # Stdlib-only Python on Google's APIs. Sign-in is Otto's: your own OAuth client
@@ -66,5 +66,6 @@ signal = true
 
 [needs]
 network = true
-# The Gmail historyId reached per account (gmail.json).
-write = ["~/.local/state/otto/google"]
+# The Gmail historyId reached per account (gmail.json); Otto's uploads (files to
+# attach, attachments saved).
+write = ["~/.local/state/otto/google", "~/.local/share/otto/uploads"]

@@ -2,6 +2,8 @@
 
 import base64
 import datetime
+import email
+import email.policy
 import io
 import json
 import os
@@ -19,7 +21,7 @@ MSG = {"id": "18c2", "threadId": "t1", "internalDate": "1791100000000", "labelId
            {"name": "From", "value": "EDF <Facture@EDF.fr>"}, {"name": "Subject", "value": "Facture"},
            {"name": "To", "value": "me@gmail.com"}, {"name": "Message-ID", "value": "<abc@edf.fr>"}],
            "parts": [{"mimeType": "text/html", "body": {"data": b64("<p>Bonjour&nbsp;!</p><script>x</script>")}},
-                     {"mimeType": "application/pdf", "filename": "facture.pdf", "body": {"size": 1200}}]}}
+                     {"mimeType": "application/pdf", "filename": "facture.pdf", "body": {"size": 6, "attachmentId": "a1"}}]}}
 
 
 class Fake:
@@ -38,7 +40,8 @@ class Fake:
         assert timeout and req.get_header("Authorization") == "Bearer tok"
         u = urllib.parse.urlparse(req.full_url)
         q = urllib.parse.parse_qs(u.query)
-        body = json.loads(req.data) if req.data else None
+        json_body = req.get_header("Content-type") == "application/json"
+        body = (json.loads(req.data) if json_body else req.data) if req.data else None
         self.requests.append((req.get_method(), u.path, q, body))
         p = u.path
         if p.endswith("/profile"):
@@ -53,6 +56,8 @@ class Fake:
                    "payload": {"headers": MSG["payload"]["headers"] + [{"name": "List-Unsubscribe", "value": "<mailto:u@edf.fr>"}]}}
         elif p.endswith("/messages") and req.get_method() == "GET":
             out = {"messages": [{"id": "18c2"}]}
+        elif p.endswith("/messages/18c2/attachments/a1"):
+            out = {"data": b64("%PDF-1"), "size": 6}
         elif "/messages/18c2" in p and req.get_method() == "GET":
             out = MSG
         elif p.endswith("/calendarList"):
@@ -111,7 +116,7 @@ class Google(unittest.TestCase):
                          ("me@gmail.com/18c2", "facture@edf.fr", "EDF", True))
         self.assertEqual(self.f.requests[0][2]["q"], ["is:unread in:inbox"])
         m = call("read", {"id": "me@gmail.com/18c2"})["structuredContent"]
-        self.assertEqual((m["body"], m["attachments"]), ("Bonjour\xa0!", [{"name": "facture.pdf", "size": 1200}]))
+        self.assertEqual((m["body"], m["attachments"]), ("Bonjour\xa0!", [{"name": "facture.pdf", "size": 6}]))
         self.assertTrue(call("read", {"id": "me@gmail.com/../x"})["isError"])
 
     def test_search_syntax_and_reply(self):
@@ -124,6 +129,32 @@ class Google(unittest.TestCase):
         raw = base64.urlsafe_b64decode(body["raw"]).decode()
         self.assertIn("In-Reply-To: <abc@edf.fr>", raw)
         self.assertTrue(call("send", {"to": "pas-une-adresse", "subject": "s", "body": "b"})["isError"])
+
+    def test_attachments_forward_and_trash(self):
+        self.role("mail")
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(os.environ, {"XDG_DATA_HOME": d}):
+            f = call("attachment", {"id": "me@gmail.com/18c2", "name": "facture.pdf"})["structuredContent"]
+            self.assertRegex(f["file"], r"^[0-9a-f]{12}/facture\.pdf$")
+            self.assertEqual((f["size"], f["url"], f["path"]), (6, "/api/files/" + f["file"], f"{d}/otto/uploads/{f['file']}"))
+            with open(f["path"], "rb") as fh:
+                self.assertEqual(fh.read(), b"%PDF-1")
+            self.assertTrue(call("attachment", {"id": "me@gmail.com/18c2", "name": "x.pdf"})["isError"])
+            # Sent with a file: the upload endpoint, the file attached.
+            call("send", {"to": "ana@x.org", "subject": "Facture", "body": "Voilà", "attachments": [f["file"]]})
+            method, path, q, data = self.f.requests[-1]
+            self.assertEqual((path, q["uploadType"]), ("/upload/gmail/v1/users/me/messages/send", ["multipart"]))
+            self.assertIn(b'filename="facture.pdf"', data)
+            self.assertTrue(call("send", {"to": "ana@x.org", "subject": "s", "body": "b", "attachments": ["../../x"]})["isError"])
+            # Forwarded: its text, its attachments, from its account.
+            out = call("forward", {"id": "me@gmail.com/18c2", "to": "bob@x.org", "body": "Pour info"})["structuredContent"]
+            self.assertEqual((out["subject"], out["forwarded"]), ("Fwd: Facture", "me@gmail.com/18c2"))
+            _, path, _, data = self.f.requests[-1]
+            msg = email.message_from_bytes(data.split(b"message/rfc822\r\n\r\n", 1)[1], policy=email.policy.default)
+            self.assertEqual((msg["To"], msg["Subject"]), ("bob@x.org", "Fwd: Facture"))
+            self.assertTrue(msg.get_body().get_content().replace("\r\n", "\n").startswith("Pour info\n\n----------"))
+            self.assertEqual([(a.get_filename(), a.get_content()) for a in msg.iter_attachments()], [("facture.pdf", b"%PDF-1")])
+        self.assertEqual(call("trash", {"id": "me@gmail.com/18c2"})["structuredContent"], {"id": "me@gmail.com/18c2", "trashed": True})
+        self.assertEqual(self.f.requests[-1][:2], ("POST", "/gmail/v1/users/me/messages/18c2/trash"))
 
     def test_calendar_meet_and_create(self):
         self.role("calendar")
@@ -228,7 +259,8 @@ class Google(unittest.TestCase):
             self.assertIn("otto account add google", call("list", {})["content"][0]["text"])
 
     def test_protocol(self):
-        self.assertEqual(list(server.ROLES["mail"]), ["accounts", "list", "search", "read", "mark_read", "draft", "send"])
+        self.assertEqual(list(server.ROLES["mail"]), ["accounts", "list", "search", "read", "mark_read", "draft", "send",
+                                                      "forward", "attachment", "trash"])
         self.assertEqual(list(server.ROLES["calendar"]), ["events", "calendars", "create", "busy", "update", "delete"])
         self.assertEqual(list(server.ROLES["contacts"]), ["search"])
 

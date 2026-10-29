@@ -1,7 +1,10 @@
 """python3 -m unittest discover extensions/microsoft"""
 
+import base64
 import io
 import json
+import os
+import tempfile
 import unittest
 import urllib.error
 import urllib.parse
@@ -36,6 +39,14 @@ class Fake:
         path = url.path.removeprefix("/v1.0")
         if path.endswith("/messages") and req.get_method() == "GET":
             body = INBOX
+        elif path == "/me/messages/AAMk1/attachments":
+            body = {"value": [{"id": "att1", "name": "facture.pdf", "contentType": "application/pdf", "size": 6},
+                              {"id": "att2", "name": "Re: devis", "size": 900}]}
+        elif path == "/me/messages/AAMk1/attachments/att1":
+            body = {"@odata.type": "#microsoft.graph.fileAttachment", "contentType": "application/pdf",
+                    "contentBytes": base64.b64encode(b"%PDF-1").decode()}
+        elif path == "/me/messages/AAMk1/attachments/att2":
+            body = {"@odata.type": "#microsoft.graph.itemAttachment"}
         elif path == "/me/messages/AAMk1":
             body = {**INBOX["value"][0], "body": {"content": "Bonjour"}, "toRecipients": [{"emailAddress": {"address": "me@outlook.com"}}],
                     "hasAttachments": False}
@@ -116,6 +127,30 @@ class Microsoft(unittest.TestCase):
         self.assertTrue(call("send", {"to": "pas-une-adresse", "subject": "s", "body": "b"})["isError"])
         self.assertTrue(call("read", {"id": "sans-compte"})["isError"])
 
+    def test_attachments_forward_and_trash(self):
+        self.use(server.MAIL)
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(os.environ, {"XDG_DATA_HOME": d}):
+            f = call("attachment", {"id": "me@outlook.com/AAMk1", "name": "facture.pdf"})["structuredContent"]
+            self.assertRegex(f["file"], r"^[0-9a-f]{12}/facture\.pdf$")
+            with open(f["path"], "rb") as fh:
+                self.assertEqual((fh.read(), f["url"]), (b"%PDF-1", "/api/files/" + f["file"]))
+            self.assertTrue(call("attachment", {"id": "me@outlook.com/AAMk1", "name": "Re: devis"})["isError"])
+            self.assertTrue(call("attachment", {"id": "me@outlook.com/AAMk1", "name": "x"})["isError"])
+            # With a file: a draft, the file added to it, then sent.
+            call("send", {"to": "ana@x.org", "subject": "Facture", "body": "Voilà", "attachments": [f["file"]]})
+            steps = [(m, p) for m, p, *_ in self.f.requests[-3:]]
+            self.assertEqual(steps, [("POST", "/v1.0/me/messages"), ("POST", "/v1.0/me/messages/NEW/attachments"),
+                                     ("POST", "/v1.0/me/messages/NEW/send")])
+            self.assertEqual(base64.b64decode(self.f.requests[-2][3]["contentBytes"]), b"%PDF-1")
+            call("forward", {"id": "me@outlook.com/AAMk1", "to": "bob@x.org", "attachments": [f["file"]]})
+            self.assertEqual(self.f.requests[-3][1], "/v1.0/me/messages/AAMk1/createForward")
+        out = call("forward", {"id": "me@outlook.com/AAMk1", "to": "Bob <bob@x.org>", "body": "Pour info"})["structuredContent"]
+        self.assertEqual(out, {"sent": True, "account": "me@outlook.com", "forwarded": "me@outlook.com/AAMk1"})
+        self.assertEqual(self.f.requests[-1][1:4:2], ("/v1.0/me/messages/AAMk1/forward", {
+            "toRecipients": [{"emailAddress": {"address": "bob@x.org", "name": "Bob"}}], "comment": "Pour info"}))
+        call("trash", {"id": "me@outlook.com/AAMk1"})
+        self.assertEqual(self.f.requests[-1][1:4:2], ("/v1.0/me/messages/AAMk1/move", {"destinationId": "deleteditems"}))
+
     def test_calendar(self):
         self.use(server.CALENDAR)
         ev = call("events", {"date": "2026-10-06"})["structuredContent"]["events"]
@@ -171,7 +206,8 @@ class Microsoft(unittest.TestCase):
     def test_protocol(self):
         self.use(server.MAIL)
         names = [t["name"] for t in server.handle({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})["result"]["tools"]]
-        self.assertEqual(names, ["accounts", "list", "search", "read", "mark_read", "draft", "send"])
+        self.assertEqual(names, ["accounts", "list", "search", "read", "mark_read", "draft", "send",
+                                 "forward", "attachment", "trash"])
         self.assertEqual(list(server.CALENDAR), ["events", "calendars", "create", "busy", "update", "delete"])
 
 

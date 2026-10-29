@@ -11,7 +11,9 @@ logged. The calendar server also announces events 10 minutes before they start
 `mail.received` for new inbox mail (Gmail history from a stored historyId, in
 ~/.local/state/otto/google/gmail.json).
 
-Ids carry their account: `me@gmail.com/18c2…` (an address has no `/`).
+Ids carry their account: `me@gmail.com/18c2…` (an address has no `/`). Attachments go
+through Otto's uploads folder: `attachment` saves one there, draft, send and forward
+attach uploads by id (`<12 hex>/<name>`).
 """
 
 import base64
@@ -21,6 +23,7 @@ import email.policy
 import email.utils
 import html
 import json
+import mimetypes
 import os
 import re
 import socket
@@ -39,6 +42,7 @@ PEOPLE = "https://people.googleapis.com/v1"
 TIMEOUT = 20
 MAX_LIST = 50
 MAX_BODY = 20000
+MAX_FILES = 25 * 1024 * 1024  # bytes of attachments a mail carries (Gmail's own limit)
 SOON_MIN = 10
 FRENCH = os.environ.get("OTTO_LANGUAGE", os.environ.get("LANG", "fr")).startswith("fr")
 SETUP = ("Aucun compte Google: mets le client_id de ton app dans [oauth.google] de config.toml, "
@@ -110,13 +114,14 @@ def emails(value):
     return out
 
 
-def api(account, method, url, body=None, query=None):
+def api(account, method, url, body=None, query=None, data=None, ctype="application/json"):
+    """A Google API call: `body` as JSON, or `data` bytes of type `ctype`."""
     token = daemon("oauth.token", {"provider": "google", "account": account})["access_token"]
     if query:
         url += "?" + urllib.parse.urlencode(query, doseq=True)
     req = urllib.request.Request(url, method=method,
-                                 data=json.dumps(body).encode() if body is not None else None,
-                                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"})
+                                 data=json.dumps(body).encode() if body is not None else data,
+                                 headers={"Authorization": f"Bearer {token}", "Content-Type": ctype})
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
             raw = r.read()
@@ -273,13 +278,23 @@ def text_of(part):
     return html.unescape(re.sub(r"<[^>]+>", "", text)).strip()
 
 
-def attachments_of(part):
-    out = []
+def file_parts(part):
+    """The parts of a message payload that are attachments (they have a filename)."""
     for p in part.get("parts") or []:
         if p.get("filename"):
-            out.append({"name": p["filename"], "size": (p.get("body") or {}).get("size", 0)})
-        out += attachments_of(p)
-    return out
+            yield p
+        yield from file_parts(p)
+
+
+def attachments_of(part):
+    return [{"name": p["filename"], "size": (p.get("body") or {}).get("size", 0)} for p in file_parts(part)]
+
+
+def part_data(account, native, part):
+    """An attachment's bytes: inline, or fetched by its attachmentId."""
+    body = part.get("body") or {}
+    data = body.get("data") or api(account, "GET", f"{GMAIL}/messages/{native}/attachments/{body.get('attachmentId', '')}").get("data", "")
+    return base64.urlsafe_b64decode(data + "=" * (-len(data) % 4))
 
 
 def mail_read(args):
@@ -301,12 +316,61 @@ def mail_mark_read(args):
     return {"id": f"{account}/{native}", "read": read}
 
 
-def raw_message(account, args):
+# --- files: Otto's uploads folder ----------------------------------------------------
+# Files the user sends from the phone are `<12 hex>/<name>` under it, and the web app
+# serves them at /api/files/<id>: attachments come from there and are saved there.
+
+FILE_ID = re.compile(r"[0-9a-f]{12}/[^/\x00-\x1f]+")
+
+
+def uploads():
+    base = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
+    return os.path.join(base, "otto", "uploads")
+
+
+def files_of(ids, total=0):
+    """[(name, content type, bytes)] of uploads ids, MAX_FILES in all (`total` already)."""
+    out = []
+    for fid in ids or []:
+        fid = str(fid)
+        try:
+            if not FILE_ID.fullmatch(fid) or fid.endswith(("/.", "/..")):
+                raise OSError
+            with open(os.path.join(uploads(), fid), "rb") as f:
+                data = f.read(MAX_FILES + 1)
+        except OSError:
+            raise Failure(f"Pas de fichier {fid!r}: joins les fichiers envoyés par l'utilisateur ou "
+                          "enregistrés par mail.attachment") from None
+        total += len(data)
+        if total > MAX_FILES:
+            raise Failure(f"Pièces jointes au-delà de {MAX_FILES >> 20} Mo")
+        name = fid.partition("/")[2]
+        out.append((name, mimetypes.guess_type(name)[0] or "application/octet-stream", data))
+    return out
+
+
+def save_file(name, mime, data):
+    """A file in the uploads, as `attachment` returns it."""
+    name = re.sub(r"[/\\\x00-\x1f\x7f]", "_", name).lstrip(". ")[:120].strip() or "fichier"
+    folder = os.path.join(uploads(), os.urandom(6).hex())
+    os.makedirs(folder, mode=0o700)
+    path = os.path.join(folder, name)
+    with open(os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb") as f:
+        f.write(data)
+    fid = f"{os.path.basename(folder)}/{name}"
+    return {"file": fid, "name": name, "mime": mime, "size": len(data), "path": path,
+            "url": "/api/files/" + "/".join(urllib.parse.quote(x) for x in fid.split("/"))}
+
+
+def raw_message(account, args, files=()):
     msg = email.message.EmailMessage(policy=email.policy.SMTP)
     msg["From"], msg["To"], msg["Subject"] = account, str(args.get("to") or ""), str(args.get("subject") or "")
     if "@" not in msg["To"]:
         raise Failure("Destinataire invalide")
     msg.set_content(str(args.get("body") or ""))
+    for name, mime, data in list(files) + files_of(args.get("attachments"), sum(len(f[2]) for f in files)):
+        main, _, sub = mime.partition("/")
+        msg.add_attachment(data, maintype=main, subtype=sub or "octet-stream", filename=name)
     thread = None
     if args.get("reply_to_id"):
         _, native = split_id(args["reply_to_id"])
@@ -317,8 +381,23 @@ def raw_message(account, args):
             msg["In-Reply-To"] = h["message-id"]
             msg["References"] = f"{h.get('references', '')} {h['message-id']}".strip()
         thread = orig.get("threadId")
+    if files or args.get("attachments"):  # over the JSON body's 5 MB: the upload endpoint
+        return {"bytes": msg.as_bytes(), **({"threadId": thread} if thread else {})}
     raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
     return {"raw": raw, **({"threadId": thread} if thread else {})}
+
+
+def post_message(account, what, message):
+    """POST a message (`what`: messages/send or drafts) as raw_message built it."""
+    if "bytes" not in message:
+        return api(account, "POST", f"{GMAIL}/{what}", message if what.endswith("send") else {"message": message})
+    meta = {k: v for k, v in message.items() if k != "bytes"}
+    meta = meta if what.endswith("send") else {"message": meta}
+    edge = uuid.uuid4().hex
+    data = (f"--{edge}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{json.dumps(meta)}\r\n"
+            f"--{edge}\r\nContent-Type: message/rfc822\r\n\r\n").encode() + message["bytes"] + f"\r\n--{edge}--".encode()
+    return api(account, "POST", f"{GMAIL.replace('/gmail/', '/upload/gmail/')}/{what}", query={"uploadType": "multipart"},
+               data=data, ctype=f"multipart/related; boundary={edge}")
 
 
 def sending_account(args):
@@ -333,14 +412,58 @@ def sending_account(args):
 
 def mail_draft(args):
     account = sending_account(args)
-    d = api(account, "POST", f"{GMAIL}/drafts", {"message": raw_message(account, args)})
+    d = post_message(account, "drafts", raw_message(account, args))
     return {"draft": True, "account": account, "id": f"{account}/{(d.get('message') or {}).get('id', '')}"}
 
 
 def mail_send(args):
     account = sending_account(args)
-    m = api(account, "POST", f"{GMAIL}/messages/send", raw_message(account, args))
+    m = post_message(account, "messages/send", raw_message(account, args))
     return {"sent": True, "account": account, "id": f"{account}/{m.get('id', '')}"}
+
+
+def mail_forward(args):
+    account, native = split_id(args.get("id"))
+    m = api(account, "GET", f"{GMAIL}/messages/{native}", query={"format": "full"})
+    h, payload = headers_of(m), m.get("payload") or {}
+    subject = h.get("subject", "")
+    quoted = "\n".join([
+        "---------- Message transféré ----------" if FRENCH else "---------- Forwarded message ----------",
+        *(f"{label} : {h.get(k, '')}" if FRENCH else f"{label}: {h.get(k, '')}"
+          for k, label in (("from", "De" if FRENCH else "From"), ("date", "Date"),
+                           ("subject", "Objet" if FRENCH else "Subject"), ("to", "À" if FRENCH else "To"))),
+        "", text_of(payload)])
+    note = str(args.get("body") or "").strip()
+    files, total = [], 0
+    for p in file_parts(payload):
+        data = part_data(account, native, p)
+        total += len(data)
+        if total > MAX_FILES:
+            raise Failure(f"Pièces jointes au-delà de {MAX_FILES >> 20} Mo: transfère-le depuis Gmail")
+        files.append((p["filename"], p.get("mimeType") or "application/octet-stream", data))
+    out = {"to": args.get("to"), "attachments": args.get("attachments"),
+           "subject": subject if subject.lower().startswith(("fwd:", "tr:")) else f"Fwd: {subject}",
+           "body": f"{note}\n\n{quoted}" if note else quoted}
+    sent = post_message(account, "messages/send", raw_message(account, out, files))
+    return {"sent": True, "account": account, "id": f"{account}/{sent.get('id', '')}",
+            "subject": out["subject"], "forwarded": f"{account}/{native}"}
+
+
+def mail_attachment(args):
+    account, native = split_id(args.get("id"))
+    m = api(account, "GET", f"{GMAIL}/messages/{native}", query={"format": "full"})
+    want = str(args.get("name") or "")
+    parts = list(file_parts(m.get("payload") or {}))
+    found = next((p for p in parts if p["filename"] == want), None)
+    if found is None:
+        raise Failure(f"Pas de pièce jointe {want!r} (pièces jointes : {', '.join(p['filename'] for p in parts) or 'aucune'})")
+    return save_file(want, found.get("mimeType") or "application/octet-stream", part_data(account, native, found))
+
+
+def mail_trash(args):
+    account, native = split_id(args.get("id"))
+    api(account, "POST", f"{GMAIL}/messages/{native}/trash")
+    return {"id": f"{account}/{native}", "trashed": True}
 
 
 # --- mail.received -----------------------------------------------------------------
@@ -764,8 +887,9 @@ def contacts_search(args):
 # --- MCP ---------------------------------------------------------------------------
 
 S, I, B = {"type": "string"}, {"type": "integer"}, {"type": "boolean"}
+FILES = {"type": "array", "items": S}
 OUT = {"type": "object", "required": ["to", "subject", "body"], "properties": {
-    "to": S, "subject": S, "body": S, "reply_to_id": S, "account": S}}
+    "to": S, "subject": S, "body": S, "reply_to_id": S, "account": S, "attachments": FILES}}
 ROLES = {
     "mail": {
         "accounts": (mail_accounts, "The Google accounts signed in.", {"type": "object", "properties": {}}),
@@ -779,6 +903,12 @@ ROLES = {
                       {"type": "object", "required": ["id"], "properties": {"id": S, "read": B}}),
         "draft": (mail_draft, "Save a Gmail draft (a reply with reply_to_id).", OUT),
         "send": (mail_send, "Send from Gmail (a reply with reply_to_id).", OUT),
+        "forward": (mail_forward, "Forward a Gmail message with its attachments.",
+                    {"type": "object", "required": ["id", "to"], "properties": {"id": S, "to": S, "body": S, "attachments": FILES}}),
+        "attachment": (mail_attachment, "Save one attachment into Otto's files.",
+                       {"type": "object", "required": ["id", "name"], "properties": {"id": S, "name": S}}),
+        "trash": (mail_trash, "Move a Gmail message to the trash.",
+                  {"type": "object", "required": ["id"], "properties": {"id": S}}),
     },
     "calendar": {
         "events": (calendar_events, "Google Calendar events from date for days, local times, Meet links.",
