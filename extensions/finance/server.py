@@ -398,7 +398,15 @@ def publish(event):
             pass
 
 
+SYNC_LOCK = threading.Lock()  # the background sync and a user's run must not append the same rows twice
+
+
 def sync(args):
+    with SYNC_LOCK:
+        return _sync(args)
+
+
+def _sync(args):
     cfg = load_config()
     force = bool(args.get("force"))
     sessions = sessions_list()
