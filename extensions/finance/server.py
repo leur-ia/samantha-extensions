@@ -97,7 +97,7 @@ def write_json(name, data):
     # Atomic so a crash mid-write never leaves a half file behind.
     path = os.path.join(state_dir(), name)
     tmp = f"{path}.{os.getpid()}.tmp"
-    with open(tmp, "w") as f:
+    with open(os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600), "w") as f:  # money: private
         json.dump(data, f, ensure_ascii=False)
     os.replace(tmp, path)
 
@@ -117,7 +117,7 @@ def load_transactions():
 
 def append_transactions(rows):
     # ponytail: append-only log, edits are re-appended lines; compact if it ever gets big.
-    with open(os.path.join(state_dir(), "transactions.jsonl"), "a") as f:
+    with open(os.open(os.path.join(state_dir(), "transactions.jsonl"), os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600), "a") as f:
         for t in rows:
             f.write(json.dumps(t, ensure_ascii=False) + "\n")
 
