@@ -1,0 +1,125 @@
+id = "finance"
+name = "Finances"
+version = "0.1.0"
+description = "Personal finance in one place: bank accounts synced through Enable Banking, budgets by category, subscriptions, shared household expenses and net worth with declared holdings (ETF, crypto, SCPI, real estate)."
+
+# Stdlib-only Python. Enable Banking is reached with a JWT signed by the user's own
+# application key (finance.pem) through openssl; prices come from Yahoo Finance and
+# CoinGecko. State (sessions, transactions, rules, budgets, holdings) lives under
+# ~/.local/state/otto/finance. The user's config: ~/.config/otto/finance.toml.
+[[mcp]]
+name = "finance"
+command = "python3"
+args = ["server.py"]
+
+[needs]
+network = true
+read = ["~/.config/otto/finance.toml", "~/.config/otto/finance.pem"]
+write = ["~/.local/state/otto/finance"]
+
+# Data class `personal` wherever a result names the user's accounts or money; `banks`
+# is a public list.
+[tools."finance.banks"]
+class = "read"
+data = "web"
+
+[tools."finance.connect"]
+class = "reversible"
+data = "personal"
+
+[tools."finance.connected"]
+class = "reversible"
+data = "personal"
+
+[tools."finance.accounts"]
+class = "read"
+data = "personal"
+
+[tools."finance.sync"]
+class = "read"
+data = "personal"
+
+[tools."finance.transactions"]
+class = "read"
+data = "personal"
+
+[tools."finance.summary"]
+class = "read"
+data = "personal"
+
+[tools."finance.categorize"]
+class = "reversible"
+data = "personal"
+
+[tools."finance.budget_set"]
+class = "reversible"
+data = "personal"
+
+[tools."finance.recurring"]
+class = "read"
+data = "personal"
+
+[tools."finance.shared"]
+class = "reversible"
+data = "personal"
+
+[tools."finance.settle"]
+class = "read"
+data = "personal"
+
+[tools."finance.holding_set"]
+class = "reversible"
+data = "personal"
+
+[tools."finance.holding_remove"]
+class = "reversible"
+data = "personal"
+
+[tools."finance.networth"]
+class = "read"
+data = "personal"
+
+# Closes the bank consent: durable, asked every time.
+[tools."finance.disconnect"]
+class = "confirm"
+data = "personal"
+
+# One event per new transaction found by a sync (a signal: watchers can trigger on it),
+# and one per sync that fetched something.
+[[event]]
+type = "finance.transaction"
+signal = true
+data_class = "personal"
+
+[[event]]
+type = "finance.synced"
+data_class = "personal"
+
+[[widget]]
+name = "finance"
+file = "widgets/finance.oui"
+title = "Mes finances"
+
+# Ready-made: turned on with recipe.apply (one confirmation); ids start with finance-.
+[[recipe]]
+name = "finance-budget"
+title = "Suivre le budget"
+description = "Chaque soir, une alerte si une catégorie dépasse 80 % de son budget ou si le mois dérape par rapport au précédent."
+
+[[recipe.watch]]
+id = "finance-budget"
+output = "notify"
+instruction = "Appelle finance.summary {} pour le mois en cours. Si une catégorie a un budget et que ratio dépasse 0,8, ou si vs_previous.change_pct dépasse 20 (les dépenses du mois courent 20 % au-dessus du mois dernier à cette date), préviens : importance normal, teaser : la catégorie et le ratio (« Restaurants : 85 % du budget »), text : les montants, le budget restant et le nombre de jours avant la fin du mois. Rien de tout cela : importance none."
+trigger = { calendar = "*-*-* 19:00" }
+
+[[recipe]]
+name = "finance-watch"
+title = "Surveiller les mouvements"
+description = "Une alerte pour chaque mouvement qui compte : une grosse dépense, un nouveau prélèvement récurrent, le salaire, un montant qui semble anormal."
+ask = "Qu'est-ce qui mérite une alerte pour toi (montant à partir duquel une dépense est grosse, commerçants à ignorer, qui dans le foyer) ?"
+
+[[recipe.watch]]
+id = "finance-watch"
+output = "notify"
+instruction = "Un nouveau mouvement est arrivé (l'événement donne id, account, date, amount, label, category). Préviens avec importance normal et un teaser (le libellé et le montant) quand : c'est une dépense de plus de 300 € ; c'est une rentrée qui ressemble à un salaire (category salaire ou gros virement) ; le libellé ressemble à un nouvel abonnement ou prélèvement (vérifie avec finance.recurring et finance.transactions {query: le libellé} si le commerçant est inconnu) ; le montant semble anormal (double prélèvement, montant très différent de l'habitude pour ce commerçant, frais bancaires). Une dépense courante (courses, transport, restaurant de tous les jours) : importance none."
+trigger = { event = "finance.transaction" }

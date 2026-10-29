@@ -1,0 +1,6 @@
+root = Surface("window", [head, table, worth], "Mes finances")
+s = Query("finance.summary", {}, {month: "", income: 0, expenses: 0, by_category: [], vs_previous: {expenses: 0, change_pct: 0}})
+n = Query("finance.networth", {}, {total: 0, by_kind: []})
+head = Row([Metric("Revenus", @Round(s.income) + " €"), Metric("Dépenses", @Round(s.expenses) + " €"), Metric("Patrimoine", @Round(n.total) + " €")])
+table = Table(["Catégorie", "Dépensé", "Budget"], @Each(s.by_category, "c", [c.category, @Round(c.spent) + " €", c.budget == null ? "—" : @Round(c.budget) + " €"]))
+worth = Table(["Patrimoine", "Valeur", "Part"], @Each(n.by_kind, "k", [k.kind, @Round(k.value) + " €", @Round(k.share * 100) + " %"]))
