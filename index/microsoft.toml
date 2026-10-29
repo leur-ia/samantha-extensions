@@ -17,3 +17,9 @@ version = "0.2.1"
 source = "https://github.com/leur-ia/samantha-extensions.git"
 path = "extensions/microsoft"
 commit = "272b3ae26719e9648a16582039a636241bcb75ec"
+
+[[release]]
+version = "0.3.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/microsoft"
+commit = "139be7fd5531b02b792b2c522321709806756060"
