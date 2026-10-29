@@ -387,7 +387,7 @@ def fetch_transactions(uid, date_from):
         key = page.get("continuation_key")
         if not key:
             return out
-        params = {"continuation_key": key}
+        params = {"date_from": date_from, "continuation_key": key}  # EB wants the same filters on every page
 
 
 def publish(event):

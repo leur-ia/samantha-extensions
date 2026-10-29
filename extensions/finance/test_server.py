@@ -201,7 +201,8 @@ class Finance(unittest.TestCase):
         tcalls = [c for c in api.calls if c[1].endswith("/transactions")]
         self.assertEqual(len(tcalls), 2)
         self.assertIn("date_from", tcalls[0][2])
-        self.assertEqual(tcalls[1][2], {"continuation_key": "k2"})
+        self.assertEqual(tcalls[1][2]["continuation_key"], "k2")
+        self.assertEqual(tcalls[1][2]["date_from"], tcalls[0][2]["date_from"])  # EB rejects a page without the same filters
         rows = {t["id"]: t for t in ok("transactions")["transactions"]}
         self.assertEqual(rows["r1"]["amount"], -42.5)
         self.assertEqual(rows["r1"]["label"], "CB CARREFOUR MARKET NICE")
