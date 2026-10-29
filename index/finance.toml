@@ -1,0 +1,8 @@
+description = "Personal finance in one place: bank accounts synced through Enable Banking, budgets by category, subscriptions, shared household expenses and net worth with declared holdings (ETF, crypto, SCPI, real estate)."
+recipes = ["Suivre le budget", "Surveiller les mouvements"]
+
+[[release]]
+version = "0.1.0"
+source = "https://github.com/leur-ia/samantha-extensions.git"
+path = "extensions/finance"
+commit = "772c52c1636d51efd7c33db4fafb6326910d6bfa"
