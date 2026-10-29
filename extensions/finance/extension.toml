@@ -1,6 +1,6 @@
 id = "finance"
 name = "Finances"
-version = "0.1.1"
+version = "0.1.2"
 description = "Personal finance in one place: bank accounts synced through Enable Banking, budgets by category, subscriptions, shared household expenses and net worth with declared holdings (ETF, crypto, SCPI, real estate)."
 
 # Stdlib-only Python. Enable Banking is reached with a JWT signed by the user's own
@@ -18,7 +18,8 @@ read = ["~/.config/otto/finance.toml", "~/.config/otto/finance.pem"]
 write = ["~/.local/state/otto/finance"]
 
 # Data class `personal` wherever a result names the user's accounts or money; `banks`
-# is a public list.
+# is a public list. Every personal tool is behind the user's passkey (`passkey = true`):
+# the phone asks Face ID once, then five minutes of access.
 [tools."finance.banks"]
 class = "read"
 data = "web"
@@ -26,63 +27,78 @@ data = "web"
 [tools."finance.connect"]
 class = "reversible"
 data = "personal"
+passkey = true
 
 [tools."finance.connected"]
 class = "reversible"
 data = "personal"
+passkey = true
 
 [tools."finance.accounts"]
 class = "read"
 data = "personal"
+passkey = true
 
 [tools."finance.sync"]
 class = "read"
 data = "personal"
+passkey = true
 
 [tools."finance.transactions"]
 class = "read"
 data = "personal"
+passkey = true
 
 [tools."finance.summary"]
 class = "read"
 data = "personal"
+passkey = true
 
 [tools."finance.categorize"]
 class = "reversible"
 data = "personal"
+passkey = true
 
 [tools."finance.budget_set"]
 class = "reversible"
 data = "personal"
+passkey = true
 
 [tools."finance.recurring"]
 class = "read"
 data = "personal"
+passkey = true
 
 [tools."finance.shared"]
 class = "reversible"
 data = "personal"
+passkey = true
 
 [tools."finance.settle"]
 class = "read"
 data = "personal"
+passkey = true
 
 [tools."finance.holding_set"]
 class = "reversible"
 data = "personal"
+passkey = true
 
 [tools."finance.holding_remove"]
 class = "reversible"
 data = "personal"
+passkey = true
 
 [tools."finance.networth"]
 class = "read"
 data = "personal"
+passkey = true
 
 # Closes the bank consent: durable, asked every time.
 [tools."finance.disconnect"]
 class = "confirm"
 data = "personal"
+passkey = true
 
 # One event per new transaction found by a sync (a signal: watchers can trigger on it),
 # and one per sync that fetched something.
