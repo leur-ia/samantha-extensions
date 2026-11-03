@@ -190,14 +190,25 @@ def headers_of(m):
     return {h["name"].lower(): h["value"] for h in (m.get("payload") or {}).get("headers") or []}
 
 
+def unsubscribe_of(h):
+    """The List-Unsubscribe link (RFC 2369): the https one when there is one, else the
+    mailto; "" without the header."""
+    links = re.findall(r"<([^>]+)>", h.get("list-unsubscribe", ""))
+    return next((l for l in links if l.startswith("http")), links[0] if links else "")
+
+
 def mail_row(account, m):
     h = headers_of(m)
     name, addr = email.utils.parseaddr(h.get("from", ""))
     stamp = int(m.get("internalDate", "0")) / 1000
     date = datetime.datetime.fromtimestamp(stamp).astimezone().isoformat(timespec="seconds")
-    return {"id": f"{account}/{m['id']}", "account": account, "from": addr.lower(), "name": name or addr,
-            "subject": h.get("subject", ""), "date": date, "when": when(date),
-            "unread": "UNREAD" in (m.get("labelIds") or [])}
+    row = {"id": f"{account}/{m['id']}", "account": account, "from": addr.lower(), "name": name or addr,
+           "subject": h.get("subject", ""), "date": date, "when": when(date),
+           "unread": "UNREAD" in (m.get("labelIds") or [])}
+    # A newsletter: its unsubscribe link, for the triage and the grooming.
+    if link := unsubscribe_of(h):
+        row["list_unsubscribe"] = link
+    return row
 
 
 def gmail_query(query):
@@ -223,7 +234,8 @@ def listing(args, q):
             ids = api(account, "GET", f"{GMAIL}/messages", query=params).get("messages", [])
             for m in ids:
                 full = api(account, "GET", f"{GMAIL}/messages/{m['id']}",
-                           query={"format": "metadata", "metadataHeaders": ["From", "Subject", "Date"]})
+                           query={"format": "metadata",
+                                  "metadataHeaders": ["From", "Subject", "Date", "List-Unsubscribe"]})
                 rows.append(mail_row(account, full))
         except Failure as e:
             errors.append(f"{account}: {e}")
@@ -504,7 +516,7 @@ def received(account, m):
     out.update(snippet=html.unescape(m.get("snippet") or "")[:SNIPPET],
                # System labels only (CATEGORY_PROMOTIONS…): a user label's id says nothing.
                labels=[x for x in m.get("labelIds") or [] if not x.startswith("Label_")],
-               list_unsubscribe="list-unsubscribe" in h,
+               list_unsubscribe=unsubscribe_of(h) or "list-unsubscribe" in h,
                # Gmail web opens a message by its API id, in the account's own session.
                url=f"https://mail.google.com/mail/u/{urllib.parse.quote(account)}/#all/{m['id']}")
     # The Gmail app on iPhone (its undocumented thread link; at worst the app opens on

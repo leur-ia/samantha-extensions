@@ -244,7 +244,9 @@ class Google(unittest.TestCase):
             d = events[0][1]
             self.assertEqual((d["id"], d["from"], d["name"], d["subject"]), ("me@gmail.com/m2", "facture@edf.fr", "EDF", "Facture"))
             self.assertEqual((d["snippet"][:27], len(d["snippet"])), ("Votre facture d'octobre xxx", 160))
-            self.assertEqual((d["labels"], d["list_unsubscribe"]), (["INBOX", "UNREAD", "CATEGORY_UPDATES"], True))
+            # The unsubscribe link itself (the https one when there is one), for the grooming.
+            self.assertEqual((d["labels"], d["list_unsubscribe"]), (["INBOX", "UNREAD", "CATEGORY_UPDATES"], "mailto:u@edf.fr"))
+            self.assertEqual(server.unsubscribe_of({"list-unsubscribe": "<mailto:a@b.c>, <https://x.y/u?1>"}), "https://x.y/u?1")
             self.assertEqual(d["url"], "https://mail.google.com/mail/u/me%40gmail.com/#all/m2")
             self.assertEqual(d["app_url"], "googlegmail:///cv=t1/accountId=1&create-new-tab")
             self.assertNotIn("body", d)
